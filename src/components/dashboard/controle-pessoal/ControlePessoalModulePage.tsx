@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DayContentProps } from 'react-day-picker';
-import { LucideIcon, Plus, PlusCircle, Search, CalendarDays, Wallet, Users, FileText, ShoppingCart, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { LucideIcon, Plus, PlusCircle, Search, CalendarDays, Wallet, Users, FileText, ShoppingCart, Pencil, Trash2, ChevronUp, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { addMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -17,8 +17,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useApiModules } from '@/hooks/useApiModules';
 import { todayBrasilia } from '@/utils/timezone';
 import { formatCpf, formatPhone } from '@/utils/formatters';
+import { baseCpfService } from '@/services/baseCpfService';
+import { consultasCpfService } from '@/services/consultasCpfService';
 import { apiRequest } from '@/config/api';
 import { toast } from 'sonner';
 
@@ -79,9 +82,14 @@ interface ControlePessoalModulePageProps {
 interface RegisteredClientOption {
   id: string;
   name: string;
+  document?: string;
   phone?: string;
   email?: string;
 }
+
+type CpfLookupMode = 'puxa-tudo' | 'simples';
+
+type CpfLookupResult = Record<string, unknown>;
 
 const moduleIconMap: Record<ControlePessoalModuleType, LucideIcon> = {
   agenda: CalendarDays,
@@ -183,6 +191,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const isSimpleSales = moduleType === 'vendasimples';
   const todayIso = useMemo(() => todayBrasilia(), []);
   const endpoint = moduleEndpointMap[moduleType];
+  const { modules } = useApiModules();
 
   const [records, setRecords] = useState<ControlePessoalRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState(todayIso);
@@ -195,6 +204,12 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const [isQuickClientFormOpen, setIsQuickClientFormOpen] = useState(false);
   const [isQuickClientSubmitting, setIsQuickClientSubmitting] = useState(false);
   const [quickClientForm, setQuickClientForm] = useState({ name: '', phone: '', email: '' });
+  const [isCpfLookupModalOpen, setIsCpfLookupModalOpen] = useState(false);
+  const [cpfLookupDocument, setCpfLookupDocument] = useState('');
+  const [cpfLookupMode, setCpfLookupMode] = useState<CpfLookupMode>('puxa-tudo');
+  const [isCpfLookupSubmitting, setIsCpfLookupSubmitting] = useState(false);
+  const [cpfLookupResult, setCpfLookupResult] = useState<CpfLookupResult | null>(null);
+  const [isSavingLookupClient, setIsSavingLookupClient] = useState(false);
   const clientLookupContainerRef = useRef<HTMLDivElement | null>(null);
   const [form, setForm] = useState({
     title: '',
@@ -296,19 +311,15 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     try {
       const response = await apiRequest<any>('/controlepessoal-novocliente?limit=200&offset=0', { method: 'GET' });
       const items = Array.isArray(response?.data?.items) ? (response.data.items as ControlePessoalApiItem[]) : [];
-      const seen = new Set<string>();
       const options = items.reduce<RegisteredClientOption[]>((acc, item) => {
         const metadata = (item.metadata || {}) as Record<string, unknown>;
         const name = (item.titulo || item.cliente_nome || '').trim();
         if (!name) return acc;
 
-        const normalizedName = name.toLowerCase();
-        if (seen.has(normalizedName)) return acc;
-        seen.add(normalizedName);
-
         acc.push({
           id: String(item.id),
           name,
+          document: typeof metadata.document === 'string' ? metadata.document : undefined,
           phone: typeof metadata.phone === 'string' ? metadata.phone : undefined,
           email: typeof metadata.email === 'string' ? metadata.email : undefined,
         });
@@ -339,11 +350,56 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
 
     return registeredClients.filter((clientOption) => {
       const hasName = clientOption.name.toLowerCase().includes(query);
+      const hasDocument = clientOption.document?.toLowerCase().includes(query);
       const hasPhone = clientOption.phone?.toLowerCase().includes(query);
       const hasEmail = clientOption.email?.toLowerCase().includes(query);
-      return Boolean(hasName || hasPhone || hasEmail);
+      return Boolean(hasName || hasDocument || hasPhone || hasEmail);
     });
   }, [form.client, registeredClients]);
+
+  const normalizeModuleRoute = useCallback((rawValue?: string | null) => {
+    if (!rawValue) return '';
+    const cleaned = rawValue.trim();
+    if (!cleaned) return '';
+    if (cleaned.startsWith('/dashboard/')) return cleaned;
+    if (cleaned.startsWith('dashboard/')) return `/${cleaned}`;
+    if (cleaned.startsWith('/')) return `/dashboard${cleaned}`;
+    return `/dashboard/${cleaned}`;
+  }, []);
+
+  const cpfLookupModules = useMemo(() => {
+    const resolveByRoute = (route: string) => {
+      const normalizedRoute = normalizeModuleRoute(route);
+      return modules.find((module) => {
+        const candidates = [
+          normalizeModuleRoute(module.path || ''),
+          normalizeModuleRoute(module.api_endpoint || ''),
+          normalizeModuleRoute(module.slug || ''),
+        ].filter(Boolean);
+
+        return candidates.includes(normalizedRoute);
+      });
+    };
+
+    return {
+      puxaTudo: resolveByRoute('/dashboard/consultar-cpf-puxa-tudo'),
+      simples: resolveByRoute('/dashboard/consultar-cpf-simples'),
+    };
+  }, [modules, normalizeModuleRoute]);
+
+  const selectedLookupPrice = useMemo(() => {
+    const selectedModule = cpfLookupMode === 'puxa-tudo' ? cpfLookupModules.puxaTudo : cpfLookupModules.simples;
+    const rawPrice = Number(selectedModule?.price ?? 0);
+    return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
+  }, [cpfLookupMode, cpfLookupModules.puxaTudo, cpfLookupModules.simples]);
+
+  const selectedLookupTitle = useMemo(() => {
+    if (cpfLookupMode === 'puxa-tudo') {
+      return cpfLookupModules.puxaTudo?.title || 'CPF Puxa Tudo';
+    }
+
+    return cpfLookupModules.simples?.title || 'CPF Simples';
+  }, [cpfLookupMode, cpfLookupModules.puxaTudo?.title, cpfLookupModules.simples?.title]);
 
   useEffect(() => {
     if (!isClientLookupOpen) return;
@@ -841,6 +897,151 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     }
   }, [loadRegisteredClients, quickClientForm.email, quickClientForm.name, quickClientForm.phone]);
 
+  const handleOpenNewClientLookupModal = useCallback(() => {
+    setCpfLookupMode('puxa-tudo');
+    setCpfLookupDocument('');
+    setCpfLookupResult(null);
+    setIsCpfLookupModalOpen(true);
+  }, []);
+
+  const handleCloseNewClientLookupModal = useCallback(() => {
+    setIsCpfLookupModalOpen(false);
+    setCpfLookupResult(null);
+    setIsCpfLookupSubmitting(false);
+    setIsSavingLookupClient(false);
+  }, []);
+
+  const handleRunCpfLookup = useCallback(async () => {
+    const documentDigits = cpfLookupDocument.replace(/\D/g, '').slice(0, 11);
+    if (documentDigits.length !== 11) {
+      toast.error('Informe um CPF válido com 11 dígitos.');
+      return;
+    }
+
+    setIsCpfLookupSubmitting(true);
+    setCpfLookupResult(null);
+
+    try {
+      const lookupResponse = await baseCpfService.getByCpf(documentDigits);
+
+      if (!lookupResponse?.success || !lookupResponse?.data) {
+        throw new Error(lookupResponse?.error || 'Nenhum dado encontrado para este CPF.');
+      }
+
+      setCpfLookupResult(lookupResponse.data as unknown as CpfLookupResult);
+
+      if (selectedLookupPrice > 0 && user?.id) {
+        try {
+          await consultasCpfService.create({
+            user_id: Number(user.id),
+            module_type: selectedLookupTitle.toUpperCase(),
+            document: documentDigits,
+            cost: selectedLookupPrice,
+            status: 'completed',
+            result_data: lookupResponse.data,
+            metadata: {
+              source: 'controlepessoal-novocliente-cpf-lookup',
+              page_route: '/dashboard/controlepessoal-novocliente',
+              module_title: selectedLookupTitle,
+              direct_lookup: true,
+            },
+          });
+        } catch (registerError) {
+          console.error('Erro ao registrar consumo da consulta CPF:', registerError);
+          toast.warning('Consulta realizada, mas não foi possível registrar o consumo automaticamente.');
+        }
+      }
+
+      toast.success('Consulta finalizada com sucesso.');
+    } catch (error) {
+      console.error('Erro ao consultar CPF no Novo Cliente:', error);
+      toast.error(error instanceof Error ? error.message : 'Não foi possível consultar este CPF.');
+    } finally {
+      setIsCpfLookupSubmitting(false);
+    }
+  }, [cpfLookupDocument, selectedLookupPrice, selectedLookupTitle, user?.id]);
+
+  const handleSaveLookupClient = useCallback(async () => {
+    if (!cpfLookupResult) return;
+
+    const resultName = typeof cpfLookupResult.nome === 'string' ? cpfLookupResult.nome.trim() : '';
+    const resultCpf = typeof cpfLookupResult.cpf === 'string'
+      ? cpfLookupResult.cpf.replace(/\D/g, '').slice(0, 11)
+      : cpfLookupDocument.replace(/\D/g, '').slice(0, 11);
+
+    if (!resultName) {
+      toast.error('A consulta não retornou nome válido para salvar.');
+      return;
+    }
+
+    const telefones = Array.isArray(cpfLookupResult.telefones)
+      ? cpfLookupResult.telefones as Array<Record<string, unknown>>
+      : [];
+    const emails = Array.isArray(cpfLookupResult.emails)
+      ? cpfLookupResult.emails as Array<Record<string, unknown>>
+      : [];
+
+    const rawPhone =
+      (typeof cpfLookupResult.telefone === 'string' ? cpfLookupResult.telefone : '') ||
+      (typeof telefones[0]?.telefone === 'string' ? telefones[0].telefone : '') ||
+      (typeof telefones[0]?.numero === 'string' ? telefones[0].numero : '');
+
+    const rawEmail =
+      (typeof cpfLookupResult.email === 'string' ? cpfLookupResult.email : '') ||
+      (typeof cpfLookupResult.email_pessoal === 'string' ? cpfLookupResult.email_pessoal : '') ||
+      (typeof emails[0]?.email === 'string' ? emails[0].email : '');
+
+    const normalizedPhone = rawPhone ? formatPhone(rawPhone) : '';
+    const normalizedDocument = resultCpf ? formatCpf(resultCpf) : '';
+
+    setIsSavingLookupClient(true);
+
+    try {
+      const response = await apiRequest<any>('/controlepessoal-novocliente', {
+        method: 'POST',
+        body: JSON.stringify({
+          titulo: resultName,
+          data_referencia: todayBrasilia(),
+          descricao: `Importado via ${selectedLookupTitle}`,
+          cliente_nome: resultName,
+          valor: 0,
+          status: 'pendente',
+          metadata: {
+            phone: normalizedPhone || undefined,
+            email: rawEmail || undefined,
+            document: normalizedDocument || undefined,
+            source: `Consulta ${selectedLookupTitle}`,
+            stage: 'novo',
+            nextContact: todayBrasilia(),
+          },
+        }),
+      });
+
+      if (!response?.success) {
+        throw new Error(response?.error || 'Não foi possível salvar os dados da consulta.');
+      }
+
+      await Promise.all([loadRecords(), loadRegisteredClients()]);
+
+      setForm((prev) => ({
+        ...prev,
+        title: resultName,
+        client: resultName,
+        phone: normalizedPhone || prev.phone,
+        email: rawEmail || prev.email,
+        document: normalizedDocument || prev.document,
+      }));
+
+      toast.success('Cliente salvo com sucesso a partir da consulta.');
+      handleCloseNewClientLookupModal();
+    } catch (error) {
+      console.error('Erro ao salvar cliente via consulta CPF:', error);
+      toast.error(error instanceof Error ? error.message : 'Falha ao salvar cliente com os dados consultados.');
+    } finally {
+      setIsSavingLookupClient(false);
+    }
+  }, [cpfLookupDocument, cpfLookupResult, handleCloseNewClientLookupModal, loadRecords, loadRegisteredClients, selectedLookupTitle]);
+
   const handleEditAgendaRecord = useCallback((recordId: string) => {
     const target = records.find((item) => item.id === recordId);
     if (!target) {
@@ -1007,7 +1208,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
 
   return (
     <div className="space-y-6">
-      {isAgenda ? (
+      {isAgenda || isNewClient ? (
         <SimpleTitleBar
           title={title}
           subtitle={subtitle}
@@ -1017,10 +1218,10 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
               type="button"
               variant="outline"
               size="icon"
-              onClick={handleOpenAgendaModal}
+              onClick={isAgenda ? handleOpenAgendaModal : handleOpenNewClientLookupModal}
               className="rounded-full h-9 w-9"
-              aria-label="Novo compromisso"
-              title="Novo compromisso"
+              aria-label={isAgenda ? 'Novo compromisso' : 'Consultar CPF para novo cliente'}
+              title={isAgenda ? 'Novo compromisso' : 'Consultar CPF para novo cliente'}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -1977,9 +2178,9 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                                   >
                                     <div>
                                       <span className="text-sm font-medium text-foreground">{clientOption.name}</span>
-                                      {(clientOption.phone || clientOption.email) ? (
+                                      {(clientOption.document || clientOption.phone || clientOption.email) ? (
                                         <span className="block text-xs text-muted-foreground">
-                                          {[clientOption.phone, clientOption.email].filter(Boolean).join(' • ')}
+                                          {[clientOption.document, clientOption.phone, clientOption.email].filter(Boolean).join(' • ')}
                                         </span>
                                       ) : null}
                                     </div>
@@ -2088,6 +2289,155 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                   Cancelar
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
+
+      {isNewClient ? (
+        <Dialog open={isCpfLookupModalOpen} onOpenChange={(open) => (open ? setIsCpfLookupModalOpen(true) : handleCloseNewClientLookupModal())}>
+          <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg sm:text-xl">Consulta CPF para novo cliente</DialogTitle>
+              <DialogDescription className="text-sm sm:text-base">
+                Escolha o módulo de consulta, confira o valor e salve os dados retornados no cadastro de cliente.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 text-sm sm:text-base">
+              <div className="space-y-2">
+                <Label htmlFor="cpf-lookup-document">CPF do cliente</Label>
+                <Input
+                  id="cpf-lookup-document"
+                  placeholder="000.000.000-00"
+                  value={cpfLookupDocument}
+                  onChange={(event) => setCpfLookupDocument(formatCpf(event.target.value))}
+                  maxLength={14}
+                  inputMode="numeric"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Módulo de consulta</Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <Button
+                    type="button"
+                    variant={cpfLookupMode === 'puxa-tudo' ? 'default' : 'outline'}
+                    className="h-auto justify-between px-3 py-3"
+                    onClick={() => setCpfLookupMode('puxa-tudo')}
+                  >
+                    <span className="text-left">
+                      <span className="block font-medium">{cpfLookupModules.puxaTudo?.title || 'CPF Puxa Tudo'}</span>
+                      <span className="block text-xs text-muted-foreground">Consulta completa com foto quando disponível</span>
+                    </span>
+                    <span className="text-xs font-semibold">{formatCurrency(Number(cpfLookupModules.puxaTudo?.price || 0))}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={cpfLookupMode === 'simples' ? 'default' : 'outline'}
+                    className="h-auto justify-between px-3 py-3"
+                    onClick={() => setCpfLookupMode('simples')}
+                  >
+                    <span className="text-left">
+                      <span className="block font-medium">{cpfLookupModules.simples?.title || 'CPF Simples'}</span>
+                      <span className="block text-xs text-muted-foreground">Consulta sem foto, mais econômica</span>
+                    </span>
+                    <span className="text-xs font-semibold">{formatCurrency(Number(cpfLookupModules.simples?.price || 0))}</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/20 p-3">
+                <p className="text-sm">
+                  <span className="font-medium">Consulta selecionada:</span> {selectedLookupTitle}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Valor:</span> {formatCurrency(selectedLookupPrice)}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button
+                  type="button"
+                  onClick={() => void handleRunCpfLookup()}
+                  disabled={isCpfLookupSubmitting}
+                  className="w-full sm:w-auto"
+                >
+                  {isCpfLookupSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Consultando...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="mr-2 h-4 w-4" />
+                      Consultar agora
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseNewClientLookupModal}
+                  disabled={isCpfLookupSubmitting || isSavingLookupClient}
+                  className="w-full sm:w-auto"
+                >
+                  Fechar
+                </Button>
+              </div>
+
+              {cpfLookupResult ? (
+                <div className="space-y-3 rounded-md border border-border bg-background p-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Nome</p>
+                      <p className="text-sm font-medium">{typeof cpfLookupResult.nome === 'string' ? cpfLookupResult.nome : 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">CPF</p>
+                      <p className="text-sm font-medium">{typeof cpfLookupResult.cpf === 'string' ? formatCpf(cpfLookupResult.cpf) : cpfLookupDocument || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Nascimento</p>
+                      <p className="text-sm font-medium">{typeof cpfLookupResult.data_nascimento === 'string' ? cpfLookupResult.data_nascimento : 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Nome da mãe</p>
+                      <p className="text-sm font-medium">{typeof cpfLookupResult.mae === 'string' ? cpfLookupResult.mae : 'Não informado'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      type="button"
+                      onClick={() => void handleSaveLookupClient()}
+                      disabled={isSavingLookupClient}
+                      className="w-full"
+                    >
+                      {isSavingLookupClient ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Salvando cliente...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Salvar cliente com estes dados
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCpfLookupResult(null)}
+                      disabled={isSavingLookupClient}
+                      className="w-full sm:w-auto"
+                    >
+                      Nova busca
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </DialogContent>
         </Dialog>
