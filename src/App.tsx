@@ -175,6 +175,7 @@ import LoginHotmail from '@/pages/dashboard/LoginHotmail';
 import LoginGmail from '@/pages/dashboard/LoginGmail';
 import LoginRenner from '@/pages/dashboard/LoginRenner';
 import PdfRg from '@/pages/dashboard/PdfRg';
+import ImprimirRg from '@/pages/dashboard/ImprimirRg';
 import PdfPersonalizado from '@/pages/dashboard/PdfPersonalizado';
 import SistemasDominioCom from '@/pages/dashboard/SistemasDominioCom';
 import SistemasDominioComBr from '@/pages/dashboard/SistemasDominioComBr';
@@ -399,6 +400,7 @@ function App() {
                     <Route path="/dashboard/login-gmail" element={<DashboardLayout><LoginGmail /></DashboardLayout>} />
                     <Route path="/dashboard/login-renner" element={<DashboardLayout><LoginRenner /></DashboardLayout>} />
 <Route path="/dashboard/pdf-rg" element={<DashboardLayout><PdfRg /></DashboardLayout>} />
+                    <Route path="/dashboard/imprimir-rg" element={<DashboardLayout><ImprimirRg /></DashboardLayout>} />
                     <Route path="/dashboard/pdf-personalizado" element={<DashboardLayout><PdfPersonalizado /></DashboardLayout>} />
                     <Route path="/dashboard/sistemas-dominio-com" element={<DashboardLayout><SistemasDominioCom /></DashboardLayout>} />
                     <Route path="/dashboard/sistemas-dominio-com-br" element={<DashboardLayout><SistemasDominioComBr /></DashboardLayout>} />
