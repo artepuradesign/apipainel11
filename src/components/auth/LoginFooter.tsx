@@ -11,7 +11,7 @@ const textByLocale = {
   'pt-BR': {
     noAccount: 'Não tem conta?',
     register: 'Cadastre-se',
-    legalPrefix: 'Ao continuar, você concorda com nossos',
+    legalPrefix: 'Nossos',
     terms: 'Termos de Uso',
     privacy: 'Política de Privacidade',
     and: 'e',
