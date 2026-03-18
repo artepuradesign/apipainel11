@@ -1863,13 +1863,13 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
 
       {isAgenda ? (
         <Dialog open={isAgendaModalOpen} onOpenChange={(open) => (open ? setIsAgendaModalOpen(true) : handleCloseAgendaModal())}>
-          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle>{editingRecordId ? 'Editar compromisso' : 'Novo compromisso'}</DialogTitle>
-              <DialogDescription>Arraste o intervalo de horário; períodos já ocupados ficam bloqueados automaticamente.</DialogDescription>
+              <DialogTitle className="text-lg sm:text-xl">{editingRecordId ? 'Editar compromisso' : 'Novo compromisso'}</DialogTitle>
+              <DialogDescription className="text-sm sm:text-base">Arraste o intervalo de horário; períodos já ocupados ficam bloqueados automaticamente.</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4">
+            <div className="space-y-4 text-sm sm:text-base">
               <div className="space-y-2">
                 <Label htmlFor="agenda-titulo">Título</Label>
                 <Input
@@ -1881,7 +1881,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="agenda-data">Dia de início</Label>
                     <Input
@@ -1929,95 +1929,10 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                     />
                   </div>
                 </div>
-
-                <AgendaTimeRangePicker
-                  startTime={form.time}
-                  endTime={form.endTime}
-                  occupiedRanges={agendaOccupiedRangesForFormDate}
-                  onChange={(nextStartTime, nextEndTime) => {
-                    setForm((prev) => ({
-                      ...prev,
-                      time: nextStartTime,
-                      endTime: nextEndTime,
-                    }));
-                  }}
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="agenda-cliente">Cliente (opcional)</Label>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <div ref={clientLookupContainerRef} className="relative flex-1">
-                        <Input
-                          id="agenda-cliente"
-                          placeholder="Digite para buscar cliente"
-                          value={form.client}
-                          autoComplete="off"
-                          onFocus={() => void ensureClientLookupOpen()}
-                          onChange={(e) => void handleClientInputChange(e.target.value)}
-                        />
-
-                        {isClientLookupOpen ? (
-                          <div className="absolute left-0 right-0 top-[calc(100%+0.375rem)] z-50 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-2 shadow-md">
-                            {isLoadingClientLookup ? (
-                              <p className="px-2 py-1 text-sm text-muted-foreground">Carregando clientes...</p>
-                            ) : filteredRegisteredClients.length === 0 ? (
-                              <p className="px-2 py-1 text-sm text-muted-foreground">Nenhum cliente encontrado.</p>
-                            ) : (
-                              <div className="space-y-1">
-                                {filteredRegisteredClients.map((clientOption) => (
-                                  <Button
-                                    key={clientOption.id}
-                                    type="button"
-                                    variant="ghost"
-                                    className="h-auto w-full justify-start px-2 py-2 text-left"
-                                    onClick={() => handleSelectClient(clientOption.name)}
-                                  >
-                                    <div>
-                                      <span className="text-sm font-medium text-foreground">{clientOption.name}</span>
-                                      {(clientOption.phone || clientOption.email) ? (
-                                        <span className="block text-xs text-muted-foreground">
-                                          {[clientOption.phone, clientOption.email].filter(Boolean).join(' • ')}
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                  </Button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
-                        aria-label="Buscar cliente cadastrado"
-                        title="Buscar cliente cadastrado"
-                        onClick={() => void handleToggleClientLookup()}
-                      >
-                        <Search className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
-                        aria-label="Cadastro rápido de cliente"
-                        title="Cadastro rápido de cliente"
-                        onClick={handleToggleQuickClientForm}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-
+...
                     {isQuickClientFormOpen ? (
                       <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cadastro rápido</p>
+                        <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Cadastro rápido</p>
                         <Input
                           placeholder="Nome do cliente"
                           value={quickClientForm.name}
