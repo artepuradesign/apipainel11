@@ -240,6 +240,7 @@ const ImprimirRg = () => {
 
   const moduleDisplayName = currentModule?.title || MODULE_TITLE;
   const isManualFlow = inputMode === 'manual';
+  const isRegistroSelected = inputMode === 'registro' && selectedSourceId !== null;
 
   const moduleBaseSalePrice = modulePrice > 0 ? modulePrice : 0;
   const moduleBaseCostPrice = useMemo(() => {
@@ -257,11 +258,12 @@ const ImprimirRg = () => {
       ? calculateSubscriptionDiscount(qrBasePrice).discountedPrice
       : qrBasePrice;
 
+  const manualTotalPrice = manualModulePrice + qrFinalPrice;
   const registroModulePrice = moduleBaseCostPrice > 0 ? moduleBaseCostPrice : manualModulePrice;
-  const totalPrice = isManualFlow ? manualModulePrice + qrFinalPrice : registroModulePrice;
-  const discount = isManualFlow && hasModuleDiscount ? discountPercentage : 0;
-  const showDiscountBadge = isManualFlow && hasModuleDiscount;
-  const originalDisplayPrice = isManualFlow ? moduleBaseSalePrice + qrBasePrice : registroModulePrice;
+  const totalPrice = isRegistroSelected ? registroModulePrice : manualTotalPrice;
+  const discount = !isRegistroSelected && hasModuleDiscount ? discountPercentage : 0;
+  const showDiscountBadge = !isRegistroSelected && hasModuleDiscount;
+  const originalDisplayPrice = !isRegistroSelected ? moduleBaseSalePrice + qrBasePrice : registroModulePrice;
   const totalBalance = planBalance + walletBalance;
   const hasSufficientBalance = totalBalance >= totalPrice;
 
