@@ -1208,7 +1208,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
 
   return (
     <div className="space-y-6">
-      {isAgenda ? (
+      {isAgenda || isNewClient ? (
         <SimpleTitleBar
           title={title}
           subtitle={subtitle}
@@ -1218,10 +1218,10 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
               type="button"
               variant="outline"
               size="icon"
-              onClick={handleOpenAgendaModal}
+              onClick={isAgenda ? handleOpenAgendaModal : handleOpenNewClientLookupModal}
               className="rounded-full h-9 w-9"
-              aria-label="Novo compromisso"
-              title="Novo compromisso"
+              aria-label={isAgenda ? 'Novo compromisso' : 'Consultar CPF para novo cliente'}
+              title={isAgenda ? 'Novo compromisso' : 'Consultar CPF para novo cliente'}
             >
               <Plus className="h-4 w-4" />
             </Button>
