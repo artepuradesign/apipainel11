@@ -76,6 +76,13 @@ interface ControlePessoalModulePageProps {
   formTitle: string;
 }
 
+interface RegisteredClientOption {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
 const moduleIconMap: Record<ControlePessoalModuleType, LucideIcon> = {
   agenda: CalendarDays,
   financeiro: Wallet,
@@ -182,6 +189,9 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAgendaModalOpen, setIsAgendaModalOpen] = useState(false);
+  const [isClientLookupOpen, setIsClientLookupOpen] = useState(false);
+  const [isLoadingClientLookup, setIsLoadingClientLookup] = useState(false);
+  const [registeredClients, setRegisteredClients] = useState<RegisteredClientOption[]>([]);
   const [form, setForm] = useState({
     title: '',
     date: todayIso,
@@ -275,6 +285,42 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     }
   }, [endpoint, mapApiItemToRecord, user?.id]);
 
+  const loadRegisteredClients = useCallback(async () => {
+    if (!user?.id) return;
+
+    setIsLoadingClientLookup(true);
+    try {
+      const response = await apiRequest<any>('/controlepessoal-novocliente?limit=200&offset=0', { method: 'GET' });
+      const items = Array.isArray(response?.data?.items) ? (response.data.items as ControlePessoalApiItem[]) : [];
+      const seen = new Set<string>();
+      const options = items
+        .map((item) => {
+          const metadata = (item.metadata || {}) as Record<string, unknown>;
+          const name = (item.titulo || item.cliente_nome || '').trim();
+          if (!name) return null;
+
+          const normalizedName = name.toLowerCase();
+          if (seen.has(normalizedName)) return null;
+          seen.add(normalizedName);
+
+          return {
+            id: String(item.id),
+            name,
+            phone: typeof metadata.phone === 'string' ? metadata.phone : undefined,
+            email: typeof metadata.email === 'string' ? metadata.email : undefined,
+          } satisfies RegisteredClientOption;
+        })
+        .filter((item): item is RegisteredClientOption => Boolean(item));
+
+      setRegisteredClients(options);
+    } catch (error) {
+      console.error('Erro ao carregar clientes cadastrados:', error);
+      toast.error('Não foi possível carregar clientes cadastrados.');
+    } finally {
+      setIsLoadingClientLookup(false);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     void loadRecords();
   }, [loadRecords]);
@@ -282,6 +328,18 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   useEffect(() => {
     setForm((prev) => ({ ...prev, date: prev.date || selectedDate }));
   }, [selectedDate]);
+
+  const filteredRegisteredClients = useMemo(() => {
+    const query = form.client.trim().toLowerCase();
+    if (!query) return registeredClients;
+
+    return registeredClients.filter((clientOption) => {
+      const hasName = clientOption.name.toLowerCase().includes(query);
+      const hasPhone = clientOption.phone?.toLowerCase().includes(query);
+      const hasEmail = clientOption.email?.toLowerCase().includes(query);
+      return Boolean(hasName || hasPhone || hasEmail);
+    });
+  }, [form.client, registeredClients]);
 
   const appointmentCountByDate = useMemo(() => {
     return records.reduce<Record<string, number>>((acc, record) => {
