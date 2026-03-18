@@ -897,6 +897,151 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     }
   }, [loadRegisteredClients, quickClientForm.email, quickClientForm.name, quickClientForm.phone]);
 
+  const handleOpenNewClientLookupModal = useCallback(() => {
+    setCpfLookupMode('puxa-tudo');
+    setCpfLookupDocument('');
+    setCpfLookupResult(null);
+    setIsCpfLookupModalOpen(true);
+  }, []);
+
+  const handleCloseNewClientLookupModal = useCallback(() => {
+    setIsCpfLookupModalOpen(false);
+    setCpfLookupResult(null);
+    setIsCpfLookupSubmitting(false);
+    setIsSavingLookupClient(false);
+  }, []);
+
+  const handleRunCpfLookup = useCallback(async () => {
+    const documentDigits = cpfLookupDocument.replace(/\D/g, '').slice(0, 11);
+    if (documentDigits.length !== 11) {
+      toast.error('Informe um CPF válido com 11 dígitos.');
+      return;
+    }
+
+    setIsCpfLookupSubmitting(true);
+    setCpfLookupResult(null);
+
+    try {
+      const lookupResponse = await baseCpfService.getByCpf(documentDigits);
+
+      if (!lookupResponse?.success || !lookupResponse?.data) {
+        throw new Error(lookupResponse?.error || 'Nenhum dado encontrado para este CPF.');
+      }
+
+      setCpfLookupResult(lookupResponse.data as CpfLookupResult);
+
+      if (selectedLookupPrice > 0 && user?.id) {
+        try {
+          await consultasCpfService.create({
+            user_id: Number(user.id),
+            module_type: selectedLookupTitle.toUpperCase(),
+            document: documentDigits,
+            cost: selectedLookupPrice,
+            status: 'completed',
+            result_data: lookupResponse.data,
+            metadata: {
+              source: 'controlepessoal-novocliente-cpf-lookup',
+              page_route: '/dashboard/controlepessoal-novocliente',
+              module_title: selectedLookupTitle,
+              direct_lookup: true,
+            },
+          });
+        } catch (registerError) {
+          console.error('Erro ao registrar consumo da consulta CPF:', registerError);
+          toast.warning('Consulta realizada, mas não foi possível registrar o consumo automaticamente.');
+        }
+      }
+
+      toast.success('Consulta finalizada com sucesso.');
+    } catch (error) {
+      console.error('Erro ao consultar CPF no Novo Cliente:', error);
+      toast.error(error instanceof Error ? error.message : 'Não foi possível consultar este CPF.');
+    } finally {
+      setIsCpfLookupSubmitting(false);
+    }
+  }, [cpfLookupDocument, selectedLookupPrice, selectedLookupTitle, user?.id]);
+
+  const handleSaveLookupClient = useCallback(async () => {
+    if (!cpfLookupResult) return;
+
+    const resultName = typeof cpfLookupResult.nome === 'string' ? cpfLookupResult.nome.trim() : '';
+    const resultCpf = typeof cpfLookupResult.cpf === 'string'
+      ? cpfLookupResult.cpf.replace(/\D/g, '').slice(0, 11)
+      : cpfLookupDocument.replace(/\D/g, '').slice(0, 11);
+
+    if (!resultName) {
+      toast.error('A consulta não retornou nome válido para salvar.');
+      return;
+    }
+
+    const telefones = Array.isArray(cpfLookupResult.telefones)
+      ? cpfLookupResult.telefones as Array<Record<string, unknown>>
+      : [];
+    const emails = Array.isArray(cpfLookupResult.emails)
+      ? cpfLookupResult.emails as Array<Record<string, unknown>>
+      : [];
+
+    const rawPhone =
+      (typeof cpfLookupResult.telefone === 'string' ? cpfLookupResult.telefone : '') ||
+      (typeof telefones[0]?.telefone === 'string' ? telefones[0].telefone : '') ||
+      (typeof telefones[0]?.numero === 'string' ? telefones[0].numero : '');
+
+    const rawEmail =
+      (typeof cpfLookupResult.email === 'string' ? cpfLookupResult.email : '') ||
+      (typeof cpfLookupResult.email_pessoal === 'string' ? cpfLookupResult.email_pessoal : '') ||
+      (typeof emails[0]?.email === 'string' ? emails[0].email : '');
+
+    const normalizedPhone = rawPhone ? formatPhone(rawPhone) : '';
+    const normalizedDocument = resultCpf ? formatCpf(resultCpf) : '';
+
+    setIsSavingLookupClient(true);
+
+    try {
+      const response = await apiRequest<any>('/controlepessoal-novocliente', {
+        method: 'POST',
+        body: JSON.stringify({
+          titulo: resultName,
+          data_referencia: todayBrasilia(),
+          descricao: `Importado via ${selectedLookupTitle}`,
+          cliente_nome: resultName,
+          valor: 0,
+          status: 'pendente',
+          metadata: {
+            phone: normalizedPhone || undefined,
+            email: rawEmail || undefined,
+            document: normalizedDocument || undefined,
+            source: `Consulta ${selectedLookupTitle}`,
+            stage: 'novo',
+            nextContact: todayBrasilia(),
+          },
+        }),
+      });
+
+      if (!response?.success) {
+        throw new Error(response?.error || 'Não foi possível salvar os dados da consulta.');
+      }
+
+      await Promise.all([loadRecords(), loadRegisteredClients()]);
+
+      setForm((prev) => ({
+        ...prev,
+        title: resultName,
+        client: resultName,
+        phone: normalizedPhone || prev.phone,
+        email: rawEmail || prev.email,
+        document: normalizedDocument || prev.document,
+      }));
+
+      toast.success('Cliente salvo com sucesso a partir da consulta.');
+      handleCloseNewClientLookupModal();
+    } catch (error) {
+      console.error('Erro ao salvar cliente via consulta CPF:', error);
+      toast.error(error instanceof Error ? error.message : 'Falha ao salvar cliente com os dados consultados.');
+    } finally {
+      setIsSavingLookupClient(false);
+    }
+  }, [cpfLookupDocument, cpfLookupResult, handleCloseNewClientLookupModal, loadRecords, loadRegisteredClients, selectedLookupTitle]);
+
   const handleEditAgendaRecord = useCallback((recordId: string) => {
     const target = records.find((item) => item.id === recordId);
     if (!target) {
