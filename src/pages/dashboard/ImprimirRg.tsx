@@ -631,12 +631,48 @@ const ImprimirRg = () => {
       <div className="w-full">
         <SimpleTitleBar title={MODULE_TITLE} subtitle="Solicite a impressão com base no RG já comprado ou enviando os dados" onBack={handleBack} />
 
-        <div className="mt-4 md:mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-4 md:gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg">Como deseja iniciar?</CardTitle>
-              <CardDescription className="text-sm">Escolha entre preencher manualmente ou reaproveitar um registro comprado no módulo RG (ID 165).</CardDescription>
+        <div className="mt-4 md:mt-6 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-4 md:gap-6 lg:gap-8">
+          <Card className="dark:bg-gray-800 dark:border-gray-700 w-full">
+            <CardHeader className="pb-4">
+              <div className="relative bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 dark:from-gray-800/50 dark:via-gray-800 dark:to-emerald-900/20 rounded-lg border border-emerald-100/50 dark:border-emerald-800/30 shadow-sm transition-all duration-300">
+                {hasDiscount && (
+                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10 pointer-events-none">
+                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 px-2.5 py-1 text-xs font-bold shadow-lg">
+                      {discount}% OFF
+                    </Badge>
+                  </div>
+                )}
+                <div className="relative p-3.5 md:p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-1 h-10 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Plano Ativo</p>
+                        <h3 className="text-sm md:text-base font-bold text-foreground truncate">
+                          {hasActiveSubscription ? subscription?.plan_name : userPlan}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                      {hasDiscount && (
+                        <span className="text-[10px] md:text-xs text-muted-foreground line-through">
+                          R$ {(isManualFlow ? originalPrice + qrBasePrice : originalPrice).toFixed(2)}
+                        </span>
+                      )}
+                      <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent whitespace-nowrap">
+                        R$ {totalPrice.toFixed(2)}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground">
+                        {isManualFlow
+                          ? `${moduleDisplayName} R$ ${finalPrice.toFixed(2)} + QR R$ ${qrFinalPrice.toFixed(2)}`
+                          : `${moduleDisplayName} R$ ${finalPrice.toFixed(2)} (sem novo QR)`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardHeader>
+
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Button
@@ -699,16 +735,6 @@ const ImprimirRg = () => {
 
               {inputMode && (
                 <form onSubmit={handleOpenConfirmModal} className="space-y-4">
-                  <div className="rounded-md border p-3">
-                    <p className="text-xs text-muted-foreground">Total cobrado</p>
-                    <p className="text-lg font-semibold">R$ {totalPrice.toFixed(2)}</p>
-                    {isManualFlow ? (
-                      <p className="text-xs text-muted-foreground">{moduleDisplayName} R$ {finalPrice.toFixed(2)} + QR Code RG {qrPlan.toUpperCase()} R$ {qrFinalPrice.toFixed(2)}</p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">{moduleDisplayName} R$ {finalPrice.toFixed(2)} (sem cobrança de QR Code)</p>
-                    )}
-                  </div>
-
                   {isManualFlow && (
                     <div className="space-y-2">
                       <Label>Período do QR Code *</Label>
@@ -748,6 +774,9 @@ const ImprimirRg = () => {
                     )}
                     {!isManualFlow && !formData.foto && inheritedFiles?.foto_base64 && (
                       <p className="text-xs text-muted-foreground">Será utilizada a foto do registro selecionado.</p>
+                    )}
+                    {isManualFlow && !formData.foto && (
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400">⚠ Sem foto: será usada uma imagem temporária padrão. Atualize depois.</p>
                     )}
                   </div>
 
@@ -809,55 +838,86 @@ const ImprimirRg = () => {
                     )}
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading || !hasSufficientBalance || isSubmitting}>
-                    {isSubmitting ? (
-                      <><Loader2 className="h-4 w-4 animate-spin mr-2" />Processando...</>
-                    ) : (
-                      <><FileText className="h-4 w-4 mr-2" />Solicitar impressão (R$ {totalPrice.toFixed(2)})</>
-                    )}
-                  </Button>
+                  <div className="flex flex-col gap-3">
+                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isLoading || !hasSufficientBalance || isSubmitting || !inputMode}>
+                      {isSubmitting ? (
+                        <><Loader2 className="h-4 w-4 animate-spin mr-2" />Processando...</>
+                      ) : (
+                        <><FileText className="h-4 w-4 mr-2" />Solicitar Pedido (R$ {totalPrice.toFixed(2)})</>
+                      )}
+                    </Button>
 
-                  {!hasSufficientBalance && (
-                    <div className="flex items-center gap-2 text-destructive text-sm">
-                      <AlertCircle className="h-4 w-4" />
-                      Saldo insuficiente. Necessário: R$ {totalPrice.toFixed(2)}
-                    </div>
-                  )}
+                    {!hasSufficientBalance && (
+                      <div className="flex items-center gap-2 text-destructive text-xs">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>Saldo insuficiente. Necessário: R$ {totalPrice.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
                 </form>
               )}
             </CardContent>
           </Card>
 
           <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Resumo de cobrança</CardTitle>
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">Meus Registros (Pedido + QR)</CardTitle>
+                <CardDescription className="text-xs">Registros do módulo RG (ID 165) para reaproveitar no pedido de impressão.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Plano ativo</span>
-                  <span className="font-medium">{hasActiveSubscription ? subscription?.plan_name : userPlan}</span>
-                </div>
+              <CardContent className="p-0">
+                {sourceLoading ? (
+                  <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                ) : sourceRecords.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum registro encontrado</p>
+                ) : (
+                  <div className="divide-y max-h-[520px] overflow-y-auto">
+                    {sourceRecords.map((record) => {
+                      const status = STATUS_LABELS[record.status] || STATUS_LABELS.realizado;
+                      const pendingDays = Math.max(0, Math.floor((Date.now() - new Date(record.created_at).getTime()) / 86400000));
 
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{moduleDisplayName}</span>
-                  <span>R$ {finalPrice.toFixed(2)}</span>
-                </div>
+                      return (
+                        <div key={record.id} className="px-3 py-3 space-y-2.5 hover:bg-muted/30 transition-colors">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <span className="text-xs font-mono text-muted-foreground">#{record.id}</span>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium truncate">{record.nome || record.cpf}</p>
+                                <p className="text-[10px] text-muted-foreground">{formatDate(record.created_at)}</p>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="text-[9px] gap-0.5 px-1.5 py-0.5">
+                              {status.icon} {status.label}
+                            </Badge>
+                          </div>
 
-                {isManualFlow && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">QR Code RG {qrPlan.toUpperCase()}</span>
-                    <span>R$ {qrFinalPrice.toFixed(2)}</span>
+                          <div className="space-y-1 text-[11px]">
+                            <p className="font-medium truncate">{record.nome || '-'}</p>
+                            <p className="text-muted-foreground">{record.cpf || '-'}</p>
+                            <p className="text-muted-foreground">Nasc. {record.dt_nascimento ? record.dt_nascimento.split('-').reverse().join('/') : '-'}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">{pendingDays} dias</span>
+                              <Badge variant="outline" className="text-[10px]">{selectedSourceId === record.id ? 'Selecionado' : 'Pendente'}</Badge>
+                            </div>
+                          </div>
+
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={selectedSourceId === record.id ? 'default' : 'outline'}
+                            className="w-full"
+                            onClick={() => {
+                              setInputMode('registro');
+                              void handleSelectSourceRecord(record.id);
+                            }}
+                            disabled={isLoading}
+                          >
+                            {selectedSourceId === record.id ? 'Registro selecionado' : 'Usar este registro'}
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-
-                <div className="flex items-center justify-between font-semibold pt-2 border-t">
-                  <span>Total</span>
-                  <span>R$ {totalPrice.toFixed(2)}</span>
-                </div>
-
-                {hasDiscount && (
-                  <Badge variant="secondary" className="text-xs">Desconto de assinatura aplicado: {discount}%</Badge>
                 )}
               </CardContent>
             </Card>
