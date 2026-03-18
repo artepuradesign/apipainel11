@@ -345,6 +345,19 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     });
   }, [form.client, registeredClients]);
 
+  useEffect(() => {
+    if (!isClientLookupOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (clientLookupContainerRef.current && !clientLookupContainerRef.current.contains(event.target as Node)) {
+        setIsClientLookupOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isClientLookupOpen]);
+
   const appointmentCountByDate = useMemo(() => {
     return records.reduce<Record<string, number>>((acc, record) => {
       acc[record.date] = (acc[record.date] || 0) + 1;
