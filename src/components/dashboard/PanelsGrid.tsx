@@ -159,6 +159,28 @@ const PanelsGrid: React.FC<PanelsGridProps> = ({ activePanels }) => {
     return `/module/${module.slug}`;
   };
 
+  const parseModulePrice = (value: unknown): number => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const normalized = String(value ?? '').replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const getDisplayBasePrice = (module: any): number => {
+    const route = getModulePageRoute(module);
+    const modulePrice = parseModulePrice(module?.price);
+
+    if (route !== '/dashboard/imprimir-rg') {
+      return modulePrice;
+    }
+
+    const qrModule = (modules || []).find((m: any) => getModulePageRoute(m) === '/dashboard/qrcode-rg-1m');
+    const qrPriceFromApi = parseModulePrice(qrModule?.price);
+    const qrPrice = qrPriceFromApi > 0 ? qrPriceFromApi : getModulePrice('/dashboard/qrcode-rg-1m');
+
+    return modulePrice + qrPrice;
+  };
+
   // Comparação financeira em centavos para evitar erro de ponto flutuante
   const toCents = (value: number) => Math.round((Number(value) || 0) * 100);
   const hasEnoughBalance = (balance: number, price: number) => toCents(balance) >= toCents(price);
