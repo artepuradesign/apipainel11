@@ -192,6 +192,10 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const [isClientLookupOpen, setIsClientLookupOpen] = useState(false);
   const [isLoadingClientLookup, setIsLoadingClientLookup] = useState(false);
   const [registeredClients, setRegisteredClients] = useState<RegisteredClientOption[]>([]);
+  const [isQuickClientFormOpen, setIsQuickClientFormOpen] = useState(false);
+  const [isQuickClientSubmitting, setIsQuickClientSubmitting] = useState(false);
+  const [quickClientForm, setQuickClientForm] = useState({ name: '', phone: '', email: '' });
+  const clientLookupContainerRef = useRef<HTMLDivElement | null>(null);
   const [form, setForm] = useState({
     title: '',
     date: todayIso,
