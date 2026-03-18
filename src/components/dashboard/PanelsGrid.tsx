@@ -170,7 +170,12 @@ const PanelsGrid: React.FC<PanelsGridProps> = ({ activePanels }) => {
     const route = getModulePageRoute(module);
     const modulePrice = parseModulePrice(module?.price);
 
-    if (route !== '/dashboard/imprimir-rg') {
+    const shouldIncludeQrPrice =
+      Number(module?.id) === 165 ||
+      route === '/dashboard/pdf-rg' ||
+      route === '/dashboard/imprimir-rg';
+
+    if (!shouldIncludeQrPrice) {
       return modulePrice;
     }
 
