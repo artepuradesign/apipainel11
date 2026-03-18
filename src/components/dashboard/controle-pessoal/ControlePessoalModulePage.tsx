@@ -928,7 +928,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
         throw new Error(lookupResponse?.error || 'Nenhum dado encontrado para este CPF.');
       }
 
-      setCpfLookupResult(lookupResponse.data as CpfLookupResult);
+      setCpfLookupResult(lookupResponse.data as unknown as CpfLookupResult);
 
       if (selectedLookupPrice > 0 && user?.id) {
         try {
