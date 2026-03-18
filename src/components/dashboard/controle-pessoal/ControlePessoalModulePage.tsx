@@ -1858,33 +1858,66 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="agenda-cliente">Cliente (opcional)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="agenda-cliente"
-                      placeholder="Nome do cliente"
-                      value={form.client}
-                      onChange={(e) => setForm((prev) => ({ ...prev, client: e.target.value }))}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
-                      aria-label="Buscar cliente cadastrado"
-                      title="Buscar cliente cadastrado"
-                    >
-                      <Search className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
-                      aria-label="Adicionar novo cliente"
-                      title="Adicionar novo cliente"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="agenda-cliente"
+                        placeholder="Nome do cliente"
+                        value={form.client}
+                        onChange={(e) => setForm((prev) => ({ ...prev, client: e.target.value }))}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
+                        aria-label="Buscar cliente cadastrado"
+                        title="Buscar cliente cadastrado"
+                        onClick={() => void handleToggleClientLookup()}
+                      >
+                        <Search className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
+                        aria-label="Adicionar novo cliente"
+                        title="Adicionar novo cliente"
+                        onClick={handleOpenNewClientPage}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {isClientLookupOpen ? (
+                      <div className="max-h-44 overflow-y-auto rounded-md border border-border bg-card p-2">
+                        {isLoadingClientLookup ? (
+                          <p className="px-2 py-1 text-sm text-muted-foreground">Carregando clientes...</p>
+                        ) : filteredRegisteredClients.length === 0 ? (
+                          <p className="px-2 py-1 text-sm text-muted-foreground">Nenhum cliente cadastrado encontrado.</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {filteredRegisteredClients.map((clientOption) => (
+                              <Button
+                                key={clientOption.id}
+                                type="button"
+                                variant="ghost"
+                                className="h-auto w-full justify-start px-2 py-2 text-left"
+                                onClick={() => handleSelectClient(clientOption.name)}
+                              >
+                                <span className="text-sm font-medium text-foreground">{clientOption.name}</span>
+                                {(clientOption.phone || clientOption.email) ? (
+                                  <span className="block text-xs text-muted-foreground">
+                                    {[clientOption.phone, clientOption.email].filter(Boolean).join(' • ')}
+                                  </span>
+                                ) : null}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div className="space-y-2">
