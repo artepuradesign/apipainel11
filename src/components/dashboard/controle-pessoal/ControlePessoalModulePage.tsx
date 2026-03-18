@@ -1534,15 +1534,15 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
               </CardTitle>
             </CardHeader>
           )}
-          <CardContent className={isAgenda ? 'p-0' : undefined}>
+          <CardContent className={isAgenda ? 'p-0 text-sm sm:text-base' : undefined}>
             {isAgenda ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)_minmax(280px,1fr)] xl:items-start">
-                  <div className="order-2 min-w-0 rounded-xl border border-border bg-card p-3 shadow-sm md:order-1">
+                  <div className="order-2 min-w-0 rounded-xl border border-border bg-card p-3 sm:p-4 shadow-sm md:order-1">
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">Linha do tempo diária</p>
-                        <p className="text-xs text-muted-foreground">Base padrão 06:00–18:00. Arraste ou use os botões para ver toda a grade.</p>
+                        <p className="text-base font-semibold text-foreground md:text-lg">Linha do tempo diária</p>
+                        <p className="text-sm text-muted-foreground md:text-base">Base padrão 06:00–18:00. Arraste ou use os botões para ver toda a grade.</p>
                       </div>
                       <Badge variant={agendaTimelineItems.length ? 'default' : 'secondary'}>
                         {agendaTimelineItems.length} compromisso(s)
@@ -1566,7 +1566,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                                 className="absolute inset-x-0"
                                 style={{ top: `${hour * timelineHourHeight}px` }}
                               >
-                                <span className="absolute left-2 sm:left-3 -translate-y-1/2 text-[12px] font-semibold text-muted-foreground">
+                                <span className="absolute left-2 sm:left-3 -translate-y-1/2 text-xs font-semibold text-muted-foreground sm:text-sm md:text-base">
                                   {`${String(hour).padStart(2, '0')}:00`}
                                 </span>
                                 <div className="ml-14 sm:ml-16 border-t border-border/60" />
@@ -1587,8 +1587,8 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                                     <div className="h-full border-l-4 border-primary px-2.5 py-2">
                                       <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0">
-                                          <p className="text-xs font-semibold text-primary">{item.startTime} - {item.endTime}</p>
-                                          <p className="truncate text-sm font-semibold text-foreground">{item.title}</p>
+                                          <p className="text-sm font-semibold text-primary">{item.startTime} - {item.endTime}</p>
+                                          <p className="truncate text-base font-semibold text-foreground">{item.title}</p>
                                         </div>
                                         <div className="flex items-center gap-1">
                                           <Button
@@ -1611,7 +1611,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                                           </Button>
                                         </div>
                                       </div>
-                                      <p className="mt-1 truncate text-xs text-muted-foreground">{item.detail}</p>
+                                      <p className="mt-1 truncate text-sm text-muted-foreground">{item.detail}</p>
                                     </div>
                                   </div>
                                 );
@@ -1619,7 +1619,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                             </div>
 
                             {agendaTimelineItems.length === 0 ? (
-                              <div className="pointer-events-none absolute inset-x-[3.8rem] sm:inset-x-[4.5rem] top-6 rounded-md border border-dashed border-border bg-card/80 p-2.5 text-xs text-muted-foreground backdrop-blur-sm">
+                              <div className="pointer-events-none absolute inset-x-[3.8rem] sm:inset-x-[4.5rem] top-6 rounded-md border border-dashed border-border bg-card/80 p-2.5 text-sm text-muted-foreground backdrop-blur-sm">
                                 Nenhum compromisso cadastrado para {formatDateBR(selectedDate)}.
                               </div>
                             ) : null}
@@ -1650,9 +1650,9 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                   </div>
 
                   {agendaCalendarPanels.map((panel) => (
-                    <div key={panel.id} className={`${panel.visibilityClass} order-1 min-w-0 rounded-xl border border-border bg-card p-3 shadow-sm md:order-2`}>
+                    <div key={panel.id} className={`${panel.visibilityClass} order-1 min-w-0 rounded-xl border border-border bg-card p-3 sm:p-4 shadow-sm md:order-2`}>
                       <div className="mb-3 flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
-                        <p className="text-sm font-semibold text-foreground">{panel.title}</p>
+                        <p className="text-base font-semibold text-foreground md:text-lg">{panel.title}</p>
                         <Badge variant="secondary">{datesWithAppointments.length} dias ativos</Badge>
                       </div>
 
@@ -1672,32 +1672,32 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                         />
                       </div>
 
-                      <div className="mt-3 rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+                      <div className="mt-3 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground">
                         <span className="font-semibold text-foreground">Data selecionada:</span> {formatDateBR(selectedDate)}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
+                <div className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-sm">
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-foreground">Histórico do dia</p>
+                    <p className="text-base font-semibold text-foreground md:text-lg">Histórico do dia</p>
                     <Badge variant="secondary">{recordsForSelectedDate.length}</Badge>
                   </div>
 
                   <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
                     {recordsForSelectedDate.length === 0 ? (
-                      <p className="rounded-md border border-dashed border-border bg-background p-3 text-xs text-muted-foreground">
+                      <p className="rounded-md border border-dashed border-border bg-background p-3 text-sm text-muted-foreground">
                         Nenhum registro em {formatDateBR(selectedDate)}.
                       </p>
                     ) : (
                       recordsForSelectedDate.map((record) => (
                         <div key={record.id} className="rounded-md border border-border bg-background p-2.5">
-                          <p className="truncate text-sm font-semibold text-foreground">{record.title}</p>
-                          <p className="mt-1 text-xs font-medium text-primary">
+                          <p className="truncate text-base font-semibold text-foreground">{record.title}</p>
+                          <p className="mt-1 text-sm font-medium text-primary">
                             {record.time || '--:--'}{record.endTime ? ` - ${record.endTime}` : ''}
                           </p>
-                          <p className="mt-1 truncate text-xs text-muted-foreground">{record.client || 'Sem cliente'} • {record.amount ? formatCurrency(record.amount) : 'Sem valor'}</p>
+                          <p className="mt-1 truncate text-sm text-muted-foreground">{record.client || 'Sem cliente'} • {record.amount ? formatCurrency(record.amount) : 'Sem valor'}</p>
                         </div>
                       ))
                     )}
