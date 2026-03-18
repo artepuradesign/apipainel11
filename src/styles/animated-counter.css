@@ -1,0 +1,26 @@
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-from-bottom {
+  animation: slide-in-from-bottom 300ms ease-in-out;
+}
+
+.animate-slide-in-from-top {
+  animation: slide-in-from-top 300ms ease-in-out;
+}

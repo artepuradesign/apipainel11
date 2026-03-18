@@ -1,0 +1,538 @@
+
+{
+  "api_config": {
+    "base_url": "https://api.consultas-premium.com.br",
+    "version": "v2",
+    "timeout": 30000,
+    "rate_limit": {
+      "requests_per_minute": 120,
+      "burst_limit": 20
+    },
+    "retry_policy": {
+      "max_retries": 3,
+      "backoff_multiplier": 2,
+      "initial_delay": 1000
+    }
+  },
+  "endpoints": {
+    "cpf": {
+      "basic": "/api/v2/cpf/basic",
+      "complete": "/api/v2/cpf/complete", 
+      "premium": "/api/v2/cpf/premium",
+      "score": "/api/v2/cpf/score"
+    },
+    "cnpj": {
+      "basic": "/api/v2/cnpj/basic",
+      "complete": "/api/v2/cnpj/complete",
+      "premium": "/api/v2/cnpj/premium",
+      "partners": "/api/v2/cnpj/partners"
+    },
+    "vehicle": {
+      "basic": "/api/v2/vehicle/basic",
+      "complete": "/api/v2/vehicle/complete",
+      "premium": "/api/v2/vehicle/premium",
+      "history": "/api/v2/vehicle/history"
+    },
+    "phone": {
+      "basic": "/api/v2/phone/basic",
+      "carrier": "/api/v2/phone/carrier",
+      "validation": "/api/v2/phone/validation"
+    },
+    "email": {
+      "validation": "/api/v2/email/validation",
+      "domain": "/api/v2/email/domain"
+    },
+    "auth": {
+      "login": "/api/v2/auth/login",
+      "refresh": "/api/v2/auth/refresh",
+      "validate": "/api/v2/auth/validate",
+      "logout": "/api/v2/auth/logout"
+    },
+    "user": {
+      "profile": "/api/v2/user/profile",
+      "balance": "/api/v2/user/balance", 
+      "history": "/api/v2/user/history",
+      "settings": "/api/v2/user/settings"
+    },
+    "billing": {
+      "plans": "/api/v2/billing/plans",
+      "subscriptions": "/api/v2/billing/subscriptions",
+      "invoices": "/api/v2/billing/invoices",
+      "payments": "/api/v2/billing/payments"
+    }
+  },
+  "sample_responses": {
+    "cpf_basic": {
+      "status": "success",
+      "data": {
+        "cpf": "12345678901",
+        "nome": "João Silva Santos",
+        "data_nascimento": "1990-05-15",
+        "situacao_cpf": "REGULAR",
+        "situacao_receita": "ATIVO",
+        "genero": "M"
+      },
+      "metadata": {
+        "consulta_id": "cpf_20250613_001",
+        "timestamp": "2025-06-13T14:30:00Z",
+        "response_time_ms": 250
+      }
+    },
+    "cpf_complete": {
+      "status": "success",
+      "data": {
+        "cpf": "12345678901",
+        "nome": "João Silva Santos",
+        "data_nascimento": "1990-05-15",
+        "situacao_cpf": "REGULAR",
+        "situacao_receita": "ATIVO",
+        "nome_mae": "Maria Silva Santos",
+        "endereco": {
+          "logradouro": "Rua das Flores, 123",
+          "bairro": "Centro",
+          "cidade": "São Paulo",
+          "uf": "SP",
+          "cep": "01234-567",
+          "tipo": "RESIDENCIAL"
+        },
+        "genero": "M",
+        "obito": null,
+        "telefones": [
+          {
+            "numero": "11987654321",
+            "tipo": "CELULAR",
+            "ativo": true
+          }
+        ],
+        "emails": [
+          {
+            "email": "joao.silva@email.com",
+            "ativo": true,
+            "verificado": false
+          }
+        ]
+      },
+      "metadata": {
+        "consulta_id": "cpf_20250613_002",
+        "timestamp": "2025-06-13T14:30:00Z",
+        "response_time_ms": 180
+      }
+    },
+    "cpf_premium": {
+      "status": "success",
+      "data": {
+        "cpf": "12345678901",
+        "nome": "João Silva Santos",
+        "data_nascimento": "1990-05-15",
+        "situacao_cpf": "REGULAR",
+        "situacao_receita": "ATIVO",
+        "nome_mae": "Maria Silva Santos",
+        "endereco": {
+          "logradouro": "Rua das Flores, 123",
+          "bairro": "Centro",
+          "cidade": "São Paulo",
+          "uf": "SP",
+          "cep": "01234-567",
+          "tipo": "RESIDENCIAL"
+        },
+        "genero": "M",
+        "obito": null,
+        "score_credito": {
+          "score": 750,
+          "faixa": "MUITO_BOM",
+          "ultima_atualizacao": "2025-06-01"
+        },
+        "relacionamentos": [
+          {
+            "tipo": "SOCIO",
+            "cnpj": "12345678000195",
+            "empresa": "EMPRESA EXEMPLO LTDA",
+            "participacao": "50.00"
+          }
+        ],
+        "bens": [
+          {
+            "tipo": "VEICULO",
+            "descricao": "VOLKSWAGEN GOL 1.0 FLEX 2020",
+            "valor_estimado": "35000.00"
+          }
+        ],
+        "restricoes": [
+          {
+            "tipo": "SPC",
+            "valor": "1500.00",
+            "data_inclusao": "2024-12-01",
+            "credor": "BANCO EXEMPLO S/A"
+          }
+        ]
+      },
+      "metadata": {
+        "consulta_id": "cpf_20250613_003",
+        "timestamp": "2025-06-13T14:30:00Z",
+        "response_time_ms": 450
+      }
+    },
+    "cnpj_basic": {
+      "status": "success",
+      "data": {
+        "cnpj": "12345678000195",
+        "razao_social": "EMPRESA EXEMPLO LTDA",
+        "nome_fantasia": "Empresa Exemplo",
+        "situacao": "ATIVA",
+        "data_abertura": "2020-01-15",
+        "atividade_principal": {
+          "codigo": "6201-5/00",
+          "descricao": "Desenvolvimento de programas de computador sob encomenda"
+        },
+        "porte": "ME",
+        "natureza_juridica": "SOCIEDADE EMPRESARIA LIMITADA"
+      },
+      "metadata": {
+        "consulta_id": "cnpj_20250613_004",
+        "timestamp": "2025-06-13T14:30:00Z",
+        "response_time_ms": 320
+      }
+    },
+    "cnpj_complete": {
+      "status": "success", 
+      "data": {
+        "cnpj": "12345678000195",
+        "razao_social": "EMPRESA EXEMPLO LTDA",
+        "nome_fantasia": "Empresa Exemplo",
+        "situacao": "ATIVA",
+        "data_abertura": "2020-01-15",
+        "atividade_principal": {
+          "codigo": "6201-5/00",
+          "descricao": "Desenvolvimento de programas de computador sob encomenda"
+        },
+        "atividades_secundarias": [
+          {
+            "codigo": "6203-1/00",
+            "descricao": "Desenvolvimento e licenciamento de programas de computador customizáveis"
+          }
+        ],
+        "capital_social": "100000.00",
+        "endereco": {
+          "logradouro": "Avenida Paulista, 1000",
+          "numero": "1000",
+          "complemento": "Sala 101",
+          "bairro": "Bela Vista",
+          "cidade": "São Paulo",
+          "uf": "SP",
+          "cep": "01310-100"
+        },
+        "quadro_societario": [
+          {
+            "nome": "João Silva Santos",
+            "cpf": "12345678901",
+            "qualificacao": "Administrador",
+            "participacao": "100.00"
+          }
+        ],
+        "filiais": [],
+        "telefones": [
+          {
+            "numero": "1133445566",
+            "tipo": "COMERCIAL"
+          }
+        ],
+        "emails": [
+          {
+            "email": "contato@empresaexemplo.com.br"
+          }
+        ],
+        "simples_nacional": {
+          "ativo": true,
+          "data_opcao": "2020-01-15"
+        }
+      },
+      "metadata": {
+        "consulta_id": "cnpj_20250613_005",
+        "timestamp": "2025-06-13T14:30:00Z",
+        "response_time_ms": 280
+      }
+    },
+    "vehicle_basic": {
+      "status": "success",
+      "data": {
+        "placa": "ABC1234",
+        "chassi": "9BD171000P1234567",
+        "marca": "VOLKSWAGEN",
+        "modelo": "GOL 1.0 FLEX",
+        "ano_fabricacao": "2020",
+        "ano_modelo": "2021",
+        "cor": "BRANCA",
+        "situacao": "CIRCULACAO",
+        "municipio": "SAO PAULO/SP"
+      },
+      "metadata": {
+        "consulta_id": "veiculo_20250613_006",
+        "timestamp": "2025-06-13T14:30:00Z",
+        "response_time_ms": 190
+      }
+    },
+    "vehicle_complete": {
+      "status": "success",
+      "data": {
+        "placa": "ABC1234",
+        "chassi": "9BD171000P1234567",
+        "marca": "VOLKSWAGEN",
+        "modelo": "GOL 1.0 FLEX",
+        "ano_fabricacao": "2020",
+        "ano_modelo": "2021",
+        "cor": "BRANCA",
+        "situacao": "CIRCULACAO",
+        "combustivel": "FLEX",
+        "municipio": "SAO PAULO/SP",
+        "proprietario": {
+          "nome": "João Silva Santos",
+          "documento": "12345678901",
+          "tipo_documento": "CPF"
+        },
+        "restricoes": [],
+        "debitos": {
+          "total": "0.00",
+          "detalhes": []
+        },
+        "historico_proprietarios": [
+          {
+            "nome": "João Silva Santos",
+            "periodo": "2020-01-15 - Atual"
+          }
+        ],
+        "recalls": [],
+        "seguro": {
+          "ativo": true,
+          "seguradora": "SEGURADORA EXEMPLO S/A",
+          "vigencia": "2024-01-01 a 2025-01-01"
+        }
+      },
+      "metadata": {
+        "consulta_id": "veiculo_20250613_007",
+        "timestamp": "2025-06-13T14:30:00Z",
+        "response_time_ms": 350
+      }
+    },
+    "phone_validation": {
+      "status": "success",
+      "data": {
+        "numero": "11987654321",
+        "valido": true,
+        "tipo": "CELULAR",
+        "operadora": "VIVO",
+        "uf": "SP",
+        "cidade": "São Paulo",
+        "ativo": true,
+        "portabilidade": false
+      },
+      "metadata": {
+        "consulta_id": "telefone_20250613_008",
+        "timestamp": "2025-06-13T14:30:00Z",
+        "response_time_ms": 120
+      }
+    },
+    "email_validation": {
+      "status": "success",
+      "data": {
+        "email": "joao.silva@email.com",
+        "valido": true,
+        "existe": true,
+        "aceita_emails": true,
+        "dominio": {
+          "nome": "email.com",
+          "valido": true,
+          "mx_record": true
+        },
+        "risco": "BAIXO"
+      },
+      "metadata": {
+        "consulta_id": "email_20250613_009",
+        "timestamp": "2025-06-13T14:30:00Z",
+        "response_time_ms": 85
+      }
+    }
+  },
+  "error_responses": {
+    "invalid_document": {
+      "status": "error",
+      "error_code": "INVALID_DOCUMENT",
+      "message": "Documento inválido ou formato incorreto",
+      "details": "O documento informado não possui um formato válido",
+      "timestamp": "2025-06-13T14:30:00Z"
+    },
+    "insufficient_balance": {
+      "status": "error",
+      "error_code": "INSUFFICIENT_BALANCE",
+      "message": "Saldo insuficiente para realizar a consulta",
+      "details": "Saldo atual: R$ 5.00, valor necessário: R$ 15.00",
+      "timestamp": "2025-06-13T14:30:00Z"
+    },
+    "rate_limit_exceeded": {
+      "status": "error",
+      "error_code": "RATE_LIMIT_EXCEEDED",
+      "message": "Limite de requisições excedido",
+      "details": "Aguarde 60 segundos antes de fazer uma nova consulta",
+      "retry_after": 60,
+      "timestamp": "2025-06-13T14:30:00Z"
+    },
+    "service_unavailable": {
+      "status": "error",
+      "error_code": "SERVICE_UNAVAILABLE",
+      "message": "Serviço temporariamente indisponível",
+      "details": "Tente novamente em alguns minutos",
+      "timestamp": "2025-06-13T14:30:00Z"
+    },
+    "not_found": {
+      "status": "error",
+      "error_code": "NOT_FOUND",
+      "message": "Documento não encontrado",
+      "details": "Não foram encontrados dados para o documento informado",
+      "timestamp": "2025-06-13T14:30:00Z"
+    }
+  },
+  "pricing": {
+    "cpf": {
+      "basic": 5.00,
+      "complete": 15.00,
+      "premium": 25.00
+    },
+    "cnpj": {
+      "basic": 8.00,
+      "complete": 20.00,
+      "premium": 35.00
+    },
+    "vehicle": {
+      "basic": 10.00,
+      "complete": 25.00,
+      "premium": 40.00
+    },
+    "phone": {
+      "validation": 2.00,
+      "carrier": 3.00
+    },
+    "email": {
+      "validation": 1.50
+    }
+  },
+  "database_schema": {
+    "mysql_tables": {
+      "users": {
+        "id": "INT AUTO_INCREMENT PRIMARY KEY",
+        "username": "VARCHAR(50) UNIQUE NOT NULL",
+        "email": "VARCHAR(100) UNIQUE NOT NULL",
+        "password_hash": "VARCHAR(255) NOT NULL",
+        "full_name": "VARCHAR(100) NOT NULL",
+        "plan_id": "INT",
+        "wallet_balance": "DECIMAL(10,2) DEFAULT 0.00",
+        "plan_balance": "DECIMAL(10,2) DEFAULT 0.00",
+        "status": "ENUM('active', 'inactive', 'suspended') DEFAULT 'active'",
+        "user_role": "ENUM('assinante', 'suporte', 'admin') DEFAULT 'assinante'",
+        "last_login": "TIMESTAMP NULL",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        "updated_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+      },
+      "plans": {
+        "id": "INT AUTO_INCREMENT PRIMARY KEY",
+        "name": "VARCHAR(50) NOT NULL",
+        "card_suit": "VARCHAR(10)",
+        "card_type": "VARCHAR(10)",
+        "discount_percentage": "INT DEFAULT 0",
+        "monthly_price": "DECIMAL(10,2)",
+        "query_limit": "INT DEFAULT -1",
+        "features": "JSON",
+        "is_active": "BOOLEAN DEFAULT TRUE",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+      },
+      "consultation_modules": {
+        "id": "INT AUTO_INCREMENT PRIMARY KEY",
+        "name": "VARCHAR(50) NOT NULL",
+        "description": "TEXT",
+        "icon": "VARCHAR(50)",
+        "path": "VARCHAR(100)",
+        "basic_price": "DECIMAL(10,2)",
+        "complete_price": "DECIMAL(10,2)",
+        "premium_price": "DECIMAL(10,2)",
+        "is_active": "BOOLEAN DEFAULT TRUE",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+      },
+      "consultations": {
+        "id": "INT AUTO_INCREMENT PRIMARY KEY",
+        "user_id": "INT",
+        "module_id": "INT",
+        "document": "VARCHAR(20) NOT NULL",
+        "consultation_type": "ENUM('basic', 'complete', 'premium')",
+        "original_price": "DECIMAL(10,2)",
+        "final_price": "DECIMAL(10,2)",
+        "discount_applied": "INT",
+        "status": "ENUM('success', 'error', 'pending')",
+        "response_data": "JSON",
+        "ip_address": "VARCHAR(45)",
+        "user_agent": "TEXT",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        "FOREIGN KEY (user_id)": "REFERENCES users(id)",
+        "FOREIGN KEY (module_id)": "REFERENCES consultation_modules(id)"
+      },
+      "balance_transactions": {
+        "id": "INT AUTO_INCREMENT PRIMARY KEY",
+        "user_id": "INT",
+        "transaction_type": "ENUM('deposit', 'withdrawal', 'consultation', 'commission', 'bonus')",
+        "amount": "DECIMAL(10,2)",
+        "balance_type": "ENUM('wallet', 'plan') DEFAULT 'wallet'",
+        "description": "VARCHAR(255)",
+        "consultation_id": "INT NULL",
+        "reference_id": "VARCHAR(100) NULL",
+        "previous_balance": "DECIMAL(10,2)",
+        "new_balance": "DECIMAL(10,2)",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        "FOREIGN KEY (user_id)": "REFERENCES users(id)",
+        "FOREIGN KEY (consultation_id)": "REFERENCES consultations(id)"
+      },
+      "payment_methods": {
+        "id": "INT AUTO_INCREMENT PRIMARY KEY",
+        "user_id": "INT",
+        "type": "ENUM('pix', 'credit_card', 'bank_transfer', 'paypal', 'crypto')",
+        "provider": "VARCHAR(50)",
+        "details": "JSON",
+        "is_default": "BOOLEAN DEFAULT FALSE",
+        "is_active": "BOOLEAN DEFAULT TRUE",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        "FOREIGN KEY (user_id)": "REFERENCES users(id)"
+      },
+      "api_keys": {
+        "id": "INT AUTO_INCREMENT PRIMARY KEY",
+        "user_id": "INT",
+        "key_hash": "VARCHAR(255) NOT NULL",
+        "name": "VARCHAR(100)",
+        "permissions": "JSON",
+        "rate_limit": "INT DEFAULT 100",
+        "is_active": "BOOLEAN DEFAULT TRUE",
+        "last_used": "TIMESTAMP NULL",
+        "expires_at": "TIMESTAMP NULL",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        "FOREIGN KEY (user_id)": "REFERENCES users(id)"
+      }
+    }
+  },
+  "sample_users": [
+    {
+      "username": "suporte",
+      "email": "contato@apipainel.com.br",
+      "password": "contato@apipainel",
+      "full_name": "Administrador Sistema",
+      "plan": "Rei de Espadas",
+      "wallet_balance": "1000.00",
+      "plan_balance": "500.00",
+      "user_role": "suporte"
+    },
+    {
+      "username": "demo",
+      "email": "demo@apipainel.com.br",
+      "password": "demo@apipainel",
+      "full_name": "Usuário Demonstração",
+      "plan": "Pré-Pago",
+      "wallet_balance": "50.00",
+      "plan_balance": "0.00",
+      "user_role": "assinante"
+    }
+  ]
+}

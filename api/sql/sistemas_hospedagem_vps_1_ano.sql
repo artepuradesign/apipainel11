@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS sistemas_hospedagem_vps_1_ano (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    module_id INT NOT NULL DEFAULT 179,
+    user_id INT NOT NULL,
+    nome_solicitante VARCHAR(150) NOT NULL,
+    nome_instancia VARCHAR(120) NOT NULL,
+    ip_vps VARCHAR(45) NOT NULL,
+    configuracao_linux VARCHAR(255) NOT NULL DEFAULT 'Ubuntu 22.04 LTS + Docker + UFW',
+    duracao_meses TINYINT UNSIGNED NOT NULL DEFAULT 12,
+    plan_start_at DATETIME NULL,
+    plan_end_at DATETIME NULL,
+    status ENUM('registrado', 'em_configuracao', 'finalizado', 'vencido', 'cancelado') NOT NULL DEFAULT 'registrado',
+    valor_cobrado DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    desconto_aplicado DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    saldo_usado ENUM('plano', 'carteira', 'misto') NOT NULL DEFAULT 'carteira',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_module_id (module_id),
+    INDEX idx_status (status),
+    INDEX idx_ip_vps (ip_vps)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

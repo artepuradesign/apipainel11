@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS sistemas_dominio_com_br (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    module_id INT NOT NULL DEFAULT 180,
+    user_id INT NOT NULL,
+    nome_solicitante VARCHAR(150) NOT NULL,
+    dominio_nome VARCHAR(63) NOT NULL,
+    dominio_completo VARCHAR(71) NOT NULL,
+    status ENUM('registrado', 'cancelado') NOT NULL DEFAULT 'registrado',
+    valor_cobrado DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    desconto_aplicado DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    saldo_usado ENUM('plano', 'carteira', 'misto') NOT NULL DEFAULT 'carteira',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_dominio_completo (dominio_completo),
+    INDEX idx_user_id (user_id),
+    INDEX idx_module_id (module_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

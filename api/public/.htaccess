@@ -1,0 +1,37 @@
+
+# Apache Configuration for API
+
+RewriteEngine On
+
+# CORS Headers - Aplicar em todas as requisições
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+Header always set Access-Control-Max-Age "86400"
+
+# Handle preflight requests
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Route plans requests to optimized endpoint
+RewriteRule ^plans/active/?$ ../plans/active.php [L]
+
+# Route fotos requests to fotos.php endpoint
+RewriteRule ^fotos/(.+)$ fotos.php [L,QSA]
+
+# Redirect all other requests to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+
+# Hide PHP version
+Header unset X-Powered-By
+
+# Force HTTPS (remover se não usar SSL)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

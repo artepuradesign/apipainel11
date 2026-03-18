@@ -1,0 +1,51 @@
+-- Tabela base_cnpj: armazena dados completos de CNPJ
+CREATE TABLE IF NOT EXISTS base_cnpj (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  cnpj VARCHAR(14) UNIQUE NOT NULL,
+  razao_social VARCHAR(255) NOT NULL,
+  nome_fantasia VARCHAR(255) DEFAULT NULL,
+  natureza_juridica VARCHAR(255) DEFAULT NULL,
+  capital_social DECIMAL(15,2) DEFAULT NULL,
+  data_inicio DATE DEFAULT NULL,
+  porte VARCHAR(100) DEFAULT NULL,
+  tipo VARCHAR(50) DEFAULT NULL,
+  telefone_1 VARCHAR(20) DEFAULT NULL,
+  telefone_2 VARCHAR(20) DEFAULT NULL,
+  email VARCHAR(255) DEFAULT NULL,
+  situacao VARCHAR(50) DEFAULT NULL,
+  situacao_data DATE DEFAULT NULL,
+  situacao_motivo VARCHAR(255) DEFAULT NULL,
+  logradouro VARCHAR(255) DEFAULT NULL,
+  numero VARCHAR(20) DEFAULT NULL,
+  complemento VARCHAR(255) DEFAULT NULL,
+  bairro VARCHAR(100) DEFAULT NULL,
+  cep VARCHAR(8) DEFAULT NULL,
+  uf VARCHAR(2) DEFAULT NULL,
+  municipio VARCHAR(100) DEFAULT NULL,
+  mei VARCHAR(3) DEFAULT 'NAO',
+  socios JSON DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_cnpj (cnpj),
+  INDEX idx_razao_social (razao_social),
+  INDEX idx_situacao (situacao)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabela consultas_cnpj: registra histórico de consultas de CNPJ
+CREATE TABLE IF NOT EXISTS consultas_cnpj (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  cnpj VARCHAR(14) NOT NULL,
+  cost DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  status ENUM('completed', 'pending', 'failed') DEFAULT 'completed',
+  result_data JSON DEFAULT NULL,
+  ip_address VARCHAR(45) DEFAULT NULL,
+  user_agent TEXT DEFAULT NULL,
+  saldo_usado ENUM('plano', 'carteira', 'misto') DEFAULT 'carteira',
+  metadata JSON DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_cnpj (user_id, cnpj),
+  INDEX idx_created_at (created_at),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

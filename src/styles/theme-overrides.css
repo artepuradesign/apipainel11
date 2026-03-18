@@ -1,0 +1,97 @@
+
+/* Sonner toast customization */
+[data-sonner-toast] {
+  /* Visual mais moderno (glass + sombra) usando tokens semânticos */
+  @apply bg-background/95 text-foreground border border-border rounded-xl shadow-lg;
+  @apply backdrop-blur-md;
+}
+
+[data-sonner-toast][data-styled="true"] {
+  @apply p-4;
+}
+
+[data-sonner-toast] [data-title] {
+  @apply text-foreground font-medium;
+}
+
+[data-sonner-toast] [data-description] {
+  @apply text-muted-foreground;
+}
+
+[data-sonner-toast] [data-action] {
+  @apply bg-primary text-primary-foreground;
+}
+
+[data-sonner-toast] [data-cancel] {
+  @apply bg-muted text-muted-foreground;
+}
+
+/* Ícone padrão do Sonner pode ficar “pesado” visualmente em alguns temas;
+   garantimos que ele herde a cor do texto (evita o “ponto preto” estourado). */
+[data-sonner-toast] [data-icon] {
+  @apply text-foreground/80;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Form styling standardization for dark theme */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark textarea,
+.dark select {
+  @apply bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400;
+}
+
+.dark input[type="text"]:focus,
+.dark input[type="email"]:focus,
+.dark input[type="password"]:focus,
+.dark input[type="number"]:focus,
+.dark textarea:focus,
+.dark select:focus {
+  @apply ring-brand-purple/50 border-brand-purple bg-gray-700;
+}
+
+/* Button standardization for dark theme */
+.dark .btn-primary {
+  @apply bg-brand-purple hover:bg-brand-darkPurple text-white;
+}
+
+.dark .btn-secondary {
+  @apply bg-gray-700 hover:bg-gray-600 text-gray-100 border-gray-600;
+}
+
+.dark .btn-ghost {
+  @apply hover:bg-gray-700/50 text-gray-200;
+}
+
+/* Card standardization for dark theme */
+.dark .card {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.dark .card-header {
+  @apply border-gray-700;
+}
+
+/* Table standardization for dark theme */
+.dark table {
+  @apply bg-gray-800;
+}
+
+.dark thead {
+  @apply bg-gray-700;
+}
+
+.dark tbody tr {
+  @apply border-gray-700 hover:bg-gray-700/30;
+}
+
+.dark td,
+.dark th {
+  @apply border-gray-700 text-gray-200;
+}

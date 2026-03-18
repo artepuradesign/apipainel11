@@ -1,0 +1,45 @@
+
+/* Dashboard layout colors */
+.dashboard-page {
+  @apply bg-gray-50 dark:bg-gray-900;
+}
+
+.dashboard-card {
+  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700;
+}
+
+.dashboard-form {
+  @apply bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600;
+}
+
+.dashboard-input {
+  @apply bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400;
+}
+
+.dashboard-text-primary {
+  @apply text-gray-900 dark:text-gray-100;
+}
+
+.dashboard-text-secondary {
+  @apply text-gray-700 dark:text-gray-200;
+}
+
+.dashboard-text-muted {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+.dashboard-button-ghost {
+  @apply hover:bg-gray-100 dark:hover:bg-gray-700/50;
+}
+
+.dashboard-button-secondary {
+  @apply bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100;
+}
+
+.dashboard-border {
+  @apply border-gray-200 dark:border-gray-700;
+}
+
+.dashboard-border-secondary {
+  @apply border-gray-300 dark:border-gray-600;
+}

@@ -1,0 +1,86 @@
+{
+  "name": "Upload de Fotos Base64 - API Painel",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Extrai fotos de HTML e converte para base64\nconst html = $json.data;\nconst cpf_id = $json.cpf_id;\nconst cpf = $json.cpf;\n\nasync function extrairFotos() {\n  const photos = [];\n  const defaultImage = 'https://st5.depositphotos.com/17433220/73304/i/450/depositphotos_733041150-stock-photo-silhouette-adult-man-male-avatar.jpg';\n\n  console.log('=== INÍCIO EXTRAÇÃO FOTOS ===');\n  console.log(`CPF: ${cpf}, CPF_ID: ${cpf_id}`);\n\n  // ✅ PASSO 1: Extrair apenas a seção de fotos\n  const sectionRegex = /<div class=\"mt-6 grid grid-cols-2 gap-4 md:grid-cols-4\">([\\s\\S]*?)<\\/div>\\s*<\\/div>/i;\n  const sectionMatch = html.match(sectionRegex);\n\n  if (!sectionMatch) {\n    console.log('❌ Seção de fotos não encontrada no HTML');\n    return [];\n  }\n\n  const fotosSection = sectionMatch[0];\n  console.log(`✅ Seção encontrada com ${fotosSection.length} caracteres`);\n\n  // ✅ PASSO 2: Buscar apenas imagens dentro da seção extraída\n  const regexImg = /<img[^>]+src=[\"']?([^\"'\\s>]+)[\"']?/gi;\n  const matches = [...fotosSection.matchAll(regexImg)];\n  \n  console.log(`📸 Total de imagens encontradas na seção: ${matches.length}`);\n\n  // ✅ PASSO 3: Processar cada imagem\n  for (let i = 0; i < matches.length; i++) {\n    const match = matches[i];\n    let src = match[1];\n    \n    console.log(`\\n--- Processando imagem ${i + 1} ---`);\n    \n    if (!src || src.trim() === '') {\n      console.log('⚠️ Imagem vazia, ignorando');\n      continue;\n    }\n\n    // Ignora a imagem padrão (placeholder)\n    if (src === defaultImage) {\n      console.log('⚠️ Imagem é placeholder, ignorando');\n      continue;\n    }\n\n    try {\n      // Se for base64, adiciona diretamente\n      if (src.startsWith('data:image')) {\n        console.log(`✅ Imagem base64 detectada (tamanho: ${src.length} caracteres)`);\n        \n        photos.push({\n          cpf_id,\n          cpf,\n          image_data: src,\n          type: photos.length === 0 ? 'foto' : `foto${photos.length + 1}`\n        });\n        \n        console.log(`✅ Foto adicionada como: ${photos[photos.length - 1].type}`);\n        continue;\n      }\n\n      // Se não for placeholder nem base64, tenta baixar\n      console.log(`🌐 Tentando baixar URL: ${src.substring(0, 50)}...`);\n      \n      const response = await fetch(src);\n      if (!response.ok) {\n        console.log(`❌ Falha ao baixar (status: ${response.status})`);\n        continue;\n      }\n\n      const buffer = Buffer.from(await response.arrayBuffer());\n      const contentType = response.headers.get('content-type') || 'image/jpeg';\n      const base64Image = `data:${contentType};base64,${buffer.toString('base64')}`;\n\n      photos.push({\n        cpf_id,\n        cpf,\n        image_data: base64Image,\n        type: photos.length === 0 ? 'foto' : `foto${photos.length + 1}`\n      });\n      \n      console.log(`✅ Foto baixada e adicionada como: ${photos[photos.length - 1].type}`);\n      \n    } catch (error) {\n      console.log(`❌ Erro ao processar imagem: ${error.message}`);\n    }\n  }\n\n  // ✅ PASSO 4: Remover duplicatas\n  const fotosUnicas = photos.filter(\n    (f, i, arr) => arr.findIndex(o => o.image_data === f.image_data) === i\n  );\n\n  console.log(`\\n=== RESULTADO FINAL ===`);\n  console.log(`📊 Fotos processadas: ${photos.length}`);\n  console.log(`📊 Fotos únicas: ${fotosUnicas.length}`);\n  \n  fotosUnicas.forEach((f, i) => {\n    console.log(`  ${i + 1}. ${f.type} (tamanho: ${f.image_data.length} chars)`);\n  });\n\n  return fotosUnicas;\n}\n\nreturn await extrairFotos();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1792, 1152],
+      "id": "4fb2da4a-1dcb-4a2a-8374-9444beea8abc",
+      "name": "Extrair Fotos do HTML"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apipainel.com.br/upload-photo-base64.php",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\n  cpf_id: $json.cpf_id,\n  cpf: $json.cpf,\n  image_data: $json.image_data,\n  type: $json.type\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 1152],
+      "id": "4d7ab480-3833-4b64-ad72-61b86fdaca94",
+      "name": "Upload Foto via API"
+    }
+  ],
+  "connections": {
+    "Extrair Fotos do HTML": {
+      "main": [
+        [
+          {
+            "node": "Upload Foto via API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3d4374fddb19c5005046693bd30734a10d2ff02f775d2eb4c7dbd5a54a13dcd6"
+  },
+  "description": "Fluxo para extrair fotos de HTML e enviar via API para cadastro automático",
+  "instructions": {
+    "requisitos": [
+      "O campo 'cpf_id' deve existir no payload anterior (ID do CPF na tabela base_cpf)",
+      "O campo 'data' deve conter o HTML com as imagens"
+    ],
+    "funcionamento": [
+      "1. Extrai todas as imagens do HTML fornecido",
+      "2. Converte URLs de imagens para base64",
+      "3. Envia cada foto para a API que:",
+      "   - Valida o cpf_id no banco",
+      "   - Converte base64 para JPG",
+      "   - Salva na pasta /fotos com nomenclatura: {cpf}.jpg, {cpf}_2.jpg, etc",
+      "   - Registra na tabela base_foto com os campos: cpf_id, nome (foto/foto2/foto3/foto4), photo (nome do arquivo)"
+    ],
+    "resposta_api": {
+      "success": {
+        "message": "Foto enviada e cadastrada com sucesso",
+        "filename": "12345678900.jpg",
+        "path": "/fotos/12345678900.jpg",
+        "cpf": "12345678900",
+        "cpf_id": 123,
+        "photo_url": "https://api.apipainel.com.br/fotos/12345678900.jpg",
+        "db_id": 456
+      },
+      "error": {
+        "error": "cpf_id não encontrado na base de dados"
+      }
+    },
+    "tipos_foto": {
+      "foto": "Primeira foto (sem sufixo no arquivo)",
+      "foto2": "Segunda foto (sufixo _2)",
+      "foto3": "Terceira foto (sufixo _3)",
+      "foto4": "Quarta foto (sufixo _4)"
+    }
+  }
+}

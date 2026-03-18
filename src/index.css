@@ -1,0 +1,10 @@
+/* Main application styles */
+@import './styles/base.css';
+@import './styles/dashboard.css';
+@import './styles/animations.css';
+@import './styles/gradients.css';
+@import './styles/theme-overrides.css';
+@import './styles/sidebar-mobile.css';
+@import './styles/animated-counter.css';
+@import './styles/matrix-theme.css';
+@import './styles/liquid-glass.css';

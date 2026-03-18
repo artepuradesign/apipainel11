@@ -1,0 +1,194 @@
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 142 76% 36%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Success / Online highlight (solid, no opacity) */
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    /* Mais suave/mais claro (sem transparência) para seções "Online" */
+    --success-subtle: 142 45% 98%;
+    --success-subtle-foreground: 142 70% 18%;
+    --success-border: 142 35% 84%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --brand-purple: 139 92% 32%;
+    --brand-darkPurple: 139 92% 25%;
+    --brand-lightPurple: 139 92% 95%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 217.2 32.6% 17.5%;
+    --card-foreground: 210 40% 98%;
+    --popover: 217.2 32.6% 17.5%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 142 76% 36%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Success / Online highlight (solid, no opacity) */
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --success-subtle: 142 30% 18%;
+    --success-subtle-foreground: 142 60% 90%;
+    --success-border: 142 35% 28%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Responsividade adicional */
+  .text-responsive {
+    @apply text-sm sm:text-base;
+  }
+  
+  .text-responsive-lg {
+    @apply text-base sm:text-lg lg:text-xl;
+  }
+  
+  .text-responsive-xl {
+    @apply text-lg sm:text-xl lg:text-2xl xl:text-3xl;
+  }
+  
+  .p-responsive {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+  
+  .px-responsive {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  .py-responsive {
+    @apply py-8 sm:py-12 lg:py-16;
+  }
+  
+  .gap-responsive {
+    @apply gap-4 sm:gap-6 lg:gap-8;
+  }
+  
+  .rounded-responsive {
+    @apply rounded-lg sm:rounded-xl;
+  }
+  
+  /* Classes para cards responsivos */
+  .card-responsive {
+    @apply w-full max-w-sm mx-auto h-auto min-h-[200px];
+  }
+  
+  /* Overflow safe para textos */
+  .text-ellipsis-responsive {
+    @apply truncate sm:text-clip;
+  }
+  
+  .line-clamp-responsive {
+    @apply line-clamp-2 sm:line-clamp-3 lg:line-clamp-none;
+  }
+  
+  /* Container responsivo personalizado */
+  .container-responsive {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
+  }
+}
+
+/* Hide button on homepage module cards, allow 3 lines of description */
+.homepage-module-card button {
+  display: none !important;
+}
+.homepage-module-card .line-clamp-2 {
+  -webkit-line-clamp: 3 !important;
+}
+.homepage-module-card .min-h-\[2rem\] {
+  min-height: 0 !important;
+}
+.homepage-module-card .h-\[190px\] {
+  height: 155px !important;
+}
+
+/* ===== Mobile App-like Behavior ===== */
+/* Prevent overscroll bounce */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbars globally but keep scroll functionality */
+* {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Safe area insets for notched devices */
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Prevent text selection on interactive elements (app-like feel) */
+@media (max-width: 768px) {
+  button, a, nav, .sidebar-item, .mobile-menu-item {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Prevent pull-to-refresh on mobile */
+  body {
+    overscroll-behavior-y: contain;
+  }
+}

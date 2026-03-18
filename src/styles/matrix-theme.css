@@ -1,0 +1,573 @@
+/* Matrix Theme - Minimal: only replaces background animation */
+
+/* Matrix animated background container */
+.matrix-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: transparent;
+}
+
+.matrix-rain-canvas {
+  width: 100%;
+  height: 100%;
+  opacity: 0.7;
+}
+
+.theme-matrix:not(.dark) .matrix-rain-canvas {
+  opacity: 0.35;
+}
+
+/* Remove all gradient overlays and section backgrounds that block the matrix rain */
+.theme-matrix .theme-matrix-hide,
+.theme-matrix .auth-gradient-light,
+.theme-matrix .auth-gradient-dark,
+.theme-matrix .site-gradient-top,
+.theme-matrix .site-gradient-top-dark,
+.theme-matrix .site-gradient-bottom,
+.theme-matrix .site-gradient-bottom-dark {
+  display: none !important;
+}
+
+/* Remove card shadows on plans */
+.theme-matrix .plan-card-matrix {
+  box-shadow: none !important;
+}
+
+/* Make ALL sections transparent so matrix rain shows through entire page */
+.theme-matrix section {
+  background: transparent !important;
+}
+
+/* Remove section internal gradient overlays and decorative blurs */
+.theme-matrix section > .absolute {
+  display: none !important;
+}
+
+/* Footer fully transparent */
+.theme-matrix footer {
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+/* Keep top menu opaque so it stays readable */
+.theme-matrix header.sticky {
+  background: hsl(0 0% 100% / 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.theme-matrix.dark header.sticky {
+  background: hsl(0 0% 7% / 0.95) !important;
+}
+
+/* ===== SIDEBAR: replace purple with green in dark matrix ===== */
+
+/* Sidebar background */
+.theme-matrix.dark .bg-white.dark\:bg-gray-900 {
+  background: hsl(0 0% 5% / 0.92) !important;
+}
+
+/* Active menu items – gradient & text */
+.theme-matrix.dark .text-brand-purple,
+.theme-matrix.dark .dark\:text-purple-300,
+.theme-matrix.dark .dark\:text-purple-400 {
+  color: #00ff41 !important;
+}
+
+/* Active item left bar */
+.theme-matrix.dark .bg-gradient-to-b.from-brand-purple {
+  background: linear-gradient(to bottom, #00ff41, #00cc33) !important;
+}
+
+/* Active item backgrounds */
+.theme-matrix.dark .from-brand-purple\/10,
+.theme-matrix.dark .dark\:from-purple-900\/20 {
+  --tw-gradient-from: rgba(0, 255, 65, 0.1) !important;
+}
+
+/* Active sub-item gradient */
+.theme-matrix.dark .from-brand-purple.to-purple-600 {
+  background: linear-gradient(to right, #00cc33, #00ff41) !important;
+}
+
+/* Sidebar header gradient */
+.theme-matrix.dark .from-brand-purple\/5 {
+  --tw-gradient-from: rgba(0, 255, 65, 0.05) !important;
+}
+
+/* Dashboard active button – already handled by .from-brand-purple.to-purple-600 above */
+
+/* Hover states */
+.theme-matrix.dark .hover\:text-brand-purple:hover,
+.theme-matrix.dark .dark\:hover\:text-purple-400:hover {
+  color: #00ff41 !important;
+}
+
+.theme-matrix.dark .hover\:bg-brand-purple\/10:hover,
+.theme-matrix.dark .dark\:hover\:bg-brand-purple\/20:hover {
+  background-color: rgba(0, 255, 65, 0.1) !important;
+}
+
+/* Border accents */
+.theme-matrix.dark .border-brand-purple\/20,
+.theme-matrix.dark .dark\:border-purple-700\/30 {
+  border-color: rgba(0, 255, 65, 0.2) !important;
+}
+
+/* Collapsed submenu portal */
+.theme-matrix.dark [data-submenu] {
+  background: hsl(0 0% 8%) !important;
+  border-color: rgba(0, 255, 65, 0.15) !important;
+}
+
+/* Sidebar toggle button */
+.theme-matrix.dark .text-primary,
+.theme-matrix.dark .dark\:text-primary {
+  color: #00ff41 !important;
+}
+
+.theme-matrix.dark .border-primary\/40,
+.theme-matrix.dark .dark\:border-primary\/50 {
+  border-color: rgba(0, 255, 65, 0.4) !important;
+}
+
+.theme-matrix.dark .hover\:bg-primary:hover {
+  background-color: #00cc33 !important;
+  border-color: #00cc33 !important;
+}
+
+/* ===== LOGO: dark matrix = white + green only ===== */
+.theme-matrix.dark .text-brand-purple.dark\:text-purple-400[class*="animate-logo"] {
+  color: #00ff41 !important;
+}
+
+/* ===== THEME SWITCHER: sun icon green in dark matrix ===== */
+.theme-matrix.dark .text-amber-500,
+.theme-matrix.dark .dark\:text-amber-300 {
+  color: #00ff41 !important;
+}
+
+/* Logo DARK: icon animates white→green→white, "API" white, "Painel" green */
+.theme-matrix.dark .matrix-logo-icon {
+  animation: matrix-logo-icon-dark 3s ease-in-out infinite !important;
+}
+
+@keyframes matrix-logo-icon-dark {
+  0%, 100% { color: #ffffff; }
+  50% { color: #00ff41; }
+}
+
+.theme-matrix.dark .matrix-logo-api {
+  color: #ffffff !important;
+}
+
+.theme-matrix.dark .matrix-logo-painel {
+  color: #00ff41 !important;
+}
+
+/* Logo LIGHT: icon alternates black/green, "API" and "Painel" both black */
+.theme-matrix:not(.dark) .matrix-logo-icon {
+  animation: matrix-logo-icon-light 3s ease-in-out infinite !important;
+}
+
+.theme-matrix:not(.dark) .matrix-logo-api {
+  color: #000000 !important;
+}
+
+.theme-matrix:not(.dark) .matrix-logo-painel {
+  color: #000000 !important;
+}
+
+@keyframes matrix-logo-icon-light {
+  0%, 100% { color: #000000; }
+  33% { color: #00cc33; }
+  66% { color: #ffffff; }
+}
+
+/* ===== LIGHT matrix: replace purple with green ===== */
+.theme-matrix:not(.dark) .text-brand-purple {
+  color: #00cc33 !important;
+}
+
+.theme-matrix:not(.dark) .bg-brand-purple {
+  background-color: #00cc33 !important;
+}
+
+.theme-matrix:not(.dark) .hover\:bg-brand-darkPurple:hover {
+  background-color: #009922 !important;
+}
+
+/* ===== HERO SECTION: matrix green buttons ===== */
+.theme-matrix .bg-secondary {
+  background-color: #00cc33 !important;
+}
+
+.theme-matrix .hover\:bg-secondary\/90:hover {
+  background-color: #00b82e !important;
+}
+
+.theme-matrix .text-secondary-foreground {
+  color: #000000 !important;
+}
+
+/* "Entrar" button (variant=default uses bg-primary) */
+.theme-matrix .bg-primary {
+  background-color: #00cc33 !important;
+}
+
+.theme-matrix .hover\:bg-primary\/90:hover {
+  background-color: #00b82e !important;
+}
+
+.theme-matrix .text-primary-foreground {
+  color: #000000 !important;
+}
+
+/* Hero benefit icons */
+.theme-matrix .text-purple-300 {
+  color: #00ff41 !important;
+}
+
+/* ===== PLAN CARDS: green theme ===== */
+/* Card background with dark green gradient */
+.theme-matrix .plan-card-matrix {
+  background: linear-gradient(145deg, rgba(0, 40, 15, 0.95) 0%, rgba(0, 60, 20, 0.9) 50%, rgba(0, 30, 10, 0.95) 100%) !important;
+  border: 1px solid rgba(0, 255, 65, 0.3) !important;
+}
+
+/* Top gradient bar on cards: purple → green */
+.theme-matrix .plan-card-matrix .bg-gradient-to-r.from-purple-500,
+.theme-matrix [class*="from-purple-500"][class*="via-violet-500"][class*="to-indigo-500"] {
+  background: linear-gradient(to right, #00cc33, #00ff41, #00cc33) !important;
+}
+
+/* Card decorative corners: purple → green */
+.theme-matrix [class*="from-purple-500\\/10"],
+.theme-matrix [class*="from-indigo-500\\/10"] {
+  --tw-gradient-from: rgba(0, 255, 65, 0.1) !important;
+}
+
+/* All purple text → green */
+.theme-matrix .text-purple-600,
+.theme-matrix .text-purple-500,
+.theme-matrix .text-purple-400,
+.theme-matrix .dark\:text-purple-400,
+.theme-matrix .dark\:text-purple-300 {
+  color: #00ff41 !important;
+}
+
+/* Purple backgrounds → green */
+.theme-matrix .bg-purple-500,
+.theme-matrix .bg-purple-600,
+.theme-matrix .bg-purple-50,
+.theme-matrix .dark\:bg-purple-900\/30 {
+  background-color: rgba(0, 204, 51, 0.15) !important;
+}
+
+/* Purple borders → green */
+.theme-matrix .border-purple-200\/50,
+.theme-matrix .dark\:border-purple-700\/30,
+.theme-matrix .border-purple-200,
+.theme-matrix .border-purple-600,
+.theme-matrix .dark\:border-purple-700,
+.theme-matrix .ring-purple-500 {
+  border-color: rgba(0, 255, 65, 0.3) !important;
+  --tw-ring-color: #00cc33 !important;
+}
+
+/* Plan card gradient buttons: purple → green */
+.theme-matrix [class*="from-purple-600"][class*="to-violet-600"] {
+  background: linear-gradient(to right, #00aa28, #00cc33) !important;
+}
+
+.theme-matrix [class*="hover\\:from-purple-700"]:hover {
+  background: linear-gradient(to right, #009922, #00aa28) !important;
+}
+
+/* Popular badge gradient → green */
+.theme-matrix [class*="from-purple-600"][class*="to-violet-600"].shadow-lg {
+  background: linear-gradient(to right, #00aa28, #00cc33) !important;
+  --tw-shadow-color: rgba(0, 204, 51, 0.3) !important;
+}
+
+/* Shadow purple → green */
+.theme-matrix .shadow-purple-500\/15,
+.theme-matrix .dark\:shadow-purple-500\/25,
+.theme-matrix .shadow-purple-500\/20,
+.theme-matrix .shadow-purple-500\/30 {
+  --tw-shadow-color: rgba(0, 204, 51, 0.2) !important;
+}
+
+/* Price text gradient: purple → green */
+.theme-matrix .bg-gradient-to-r.from-purple-600.to-violet-600.bg-clip-text {
+  background: linear-gradient(to right, #00cc33, #00ff41) !important;
+  -webkit-background-clip: text !important;
+}
+
+/* Plan card hover states */
+.theme-matrix .hover\:border-purple-300:hover,
+.theme-matrix .dark\:hover\:border-purple-600:hover {
+  border-color: #00ff41 !important;
+}
+
+/* Card text should be light green on dark green bg */
+.theme-matrix .plan-card-matrix .text-gray-900,
+.theme-matrix .plan-card-matrix .dark\:text-white,
+.theme-matrix .plan-card-matrix [class*="dark:text-white"] {
+  color: #e0ffe0 !important;
+}
+
+.theme-matrix .plan-card-matrix .text-gray-500,
+.theme-matrix .plan-card-matrix .text-gray-600,
+.theme-matrix .plan-card-matrix .dark\:text-gray-400,
+.theme-matrix .plan-card-matrix .dark\:text-gray-300 {
+  color: #a0d8a0 !important;
+}
+
+/* Loading spinner purple → green */
+.theme-matrix .text-brand-purple {
+  color: #00cc33 !important;
+}
+
+/* Section headers in matrix theme */
+.theme-matrix section .text-gray-900,
+.theme-matrix section .dark\:text-gray-100 {
+  color: #e0ffe0 !important;
+}
+
+.theme-matrix section .text-gray-600,
+.theme-matrix section .dark\:text-gray-400,
+.theme-matrix section .text-gray-500 {
+  color: #a0d8a0 !important;
+}
+
+/* ===== HERO: purple decorative blurs → green ===== */
+.theme-matrix .bg-purple-500\/20 {
+  background-color: rgba(0, 204, 51, 0.2) !important;
+}
+
+/* ===== Plans section background decorations → green ===== */
+.theme-matrix [class*="from-purple-500\\/5"],
+.theme-matrix [class*="from-purple-500\\/10"],
+.theme-matrix [class*="from-brand-purple\\/10"] {
+  --tw-gradient-from: rgba(0, 204, 51, 0.1) !important;
+}
+
+/* Category header icon and count badge */
+.theme-matrix .text-purple-600.dark\:text-purple-400 {
+  color: #00ff41 !important;
+}
+
+.theme-matrix .bg-purple-600.text-white.rounded-full {
+  background-color: #00cc33 !important;
+}
+
+/* Carousel play/pause button */
+.theme-matrix .text-brand-purple.dark\:text-brand-purple {
+  color: #00cc33 !important;
+}
+
+/* ===== FOOTER: social icons green in dark matrix ===== */
+.theme-matrix.dark footer .text-gray-500,
+.theme-matrix.dark footer .text-muted-foreground {
+  color: #00aa28 !important;
+}
+
+.theme-matrix.dark footer .bg-gray-100,
+.theme-matrix.dark footer .dark\:bg-gray-800,
+.theme-matrix.dark footer .bg-muted {
+  background-color: rgba(0, 40, 15, 0.8) !important;
+}
+
+.theme-matrix.dark footer a:hover .text-gray-500,
+.theme-matrix.dark footer a:hover .text-muted-foreground {
+  color: #00ff41 !important;
+}
+
+/* Footer hover bg: green instead of purple */
+.theme-matrix footer .hover\:bg-brand-purple:hover {
+  background-color: #00aa28 !important;
+}
+
+.theme-matrix footer .hover\:shadow-brand-purple\/25:hover {
+  --tw-shadow-color: rgba(0, 204, 51, 0.25) !important;
+}
+
+/* ===== MODULE CARDS: blue icons → black in dark matrix ===== */
+.theme-matrix.dark .text-blue-300,
+.theme-matrix.dark .text-blue-400,
+.theme-matrix.dark .text-blue-600 {
+  color: #000000 !important;
+}
+
+/* Keep green icons green */
+.theme-matrix.dark .text-green-300,
+.theme-matrix.dark .text-green-400,
+.theme-matrix.dark .text-green-500 {
+  color: #00ff41 !important;
+}
+
+/* ===== TESTIMONIALS: black bg in light matrix ===== */
+.theme-matrix:not(.dark) .bg-white\/80,
+.theme-matrix:not(.dark) .dark\:bg-gray-800\/80 {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border-color: rgba(0, 255, 65, 0.2) !important;
+}
+
+.theme-matrix:not(.dark) .bg-white\/80 .text-gray-900,
+.theme-matrix:not(.dark) .bg-white\/80 .text-gray-600,
+.theme-matrix:not(.dark) .bg-white\/80 .text-gray-500 {
+  color: #e0ffe0 !important;
+}
+
+.theme-matrix:not(.dark) .bg-white\/80 .border-brand-purple\/30 {
+  border-color: rgba(0, 255, 65, 0.3) !important;
+}
+
+/* Avatar gradient: purple → green in matrix */
+.theme-matrix .from-brand-purple.to-purple-600 {
+  background: linear-gradient(to bottom right, #00cc33, #00aa28) !important;
+}
+
+.theme-matrix .ring-brand-purple\/20 {
+  --tw-ring-color: rgba(0, 204, 51, 0.2) !important;
+}
+
+/* ===== MODULE CARDS: gray bg in light matrix ===== */
+.theme-matrix:not(.dark) .homepage-module-card .bg-white,
+.theme-matrix:not(.dark) .homepage-module-card [class*="bg-white"],
+.theme-matrix:not(.dark) .homepage-module-card [class*="bg-gray-50"] {
+  background: rgba(55, 55, 55, 0.95) !important;
+  border-color: rgba(0, 255, 65, 0.25) !important;
+}
+
+.theme-matrix:not(.dark) .homepage-module-card .text-gray-900,
+.theme-matrix:not(.dark) .homepage-module-card .text-gray-100 {
+  color: #e0ffe0 !important;
+}
+
+.theme-matrix:not(.dark) .homepage-module-card .text-gray-600,
+.theme-matrix:not(.dark) .homepage-module-card .text-gray-500,
+.theme-matrix:not(.dark) .homepage-module-card .text-gray-300 {
+  color: #a0d8a0 !important;
+}
+
+/* ===== FORCE ALL BUTTONS GREEN in matrix ===== */
+/* Primary buttons (Entrar, Testar grátis hero, Comece em 1 minuto) */
+.theme-matrix button[class*="bg-primary"],
+.theme-matrix a button[class*="bg-primary"],
+.theme-matrix [class*="bg-primary"]:not([class*="/"]):not(div) {
+  background-color: #00cc33 !important;
+  border-color: #00cc33 !important;
+}
+
+.theme-matrix button[class*="bg-primary"]:hover,
+.theme-matrix a button[class*="bg-primary"]:hover {
+  background-color: #00aa28 !important;
+  border-color: #00aa28 !important;
+}
+
+.theme-matrix .text-primary-foreground {
+  color: #000000 !important;
+}
+
+/* Secondary buttons (Testar grátis menu) */
+.theme-matrix button[class*="bg-secondary"],
+.theme-matrix a button[class*="bg-secondary"] {
+  background-color: #00cc33 !important;
+  border-color: #00cc33 !important;
+}
+
+.theme-matrix button[class*="bg-secondary"]:hover,
+.theme-matrix a button[class*="bg-secondary"]:hover {
+  background-color: #00aa28 !important;
+  border-color: #00aa28 !important;
+}
+
+.theme-matrix .text-secondary-foreground {
+  color: #000000 !important;
+}
+
+/* ===== MODULE ICON BG: purple → black ===== */
+.theme-matrix .bg-purple-800\/60,
+.theme-matrix .bg-purple-100,
+.theme-matrix [class*="bg-purple-800"],
+.theme-matrix [class*="bg-purple-100"] {
+  background-color: #000000 !important;
+}
+
+.theme-matrix .border-purple-600\/30,
+.theme-matrix .border-purple-200,
+.theme-matrix [class*="border-purple-600"],
+.theme-matrix [class*="border-purple-200"] {
+  border-color: rgba(0, 255, 65, 0.3) !important;
+}
+
+/* Module icon color: green */
+.theme-matrix .text-purple-300,
+.theme-matrix .text-purple-600,
+.theme-matrix [class*="text-purple-300"],
+.theme-matrix [class*="text-purple-600"] {
+  color: #00ff41 !important;
+}
+
+/* Module card title hover → green */
+.theme-matrix .homepage-module-card:hover .text-gray-900,
+.theme-matrix .homepage-module-card:hover .text-gray-100,
+.theme-matrix .homepage-module-card:hover [class*="text-green-400"] {
+  color: #00ff41 !important;
+}
+
+/* ===== CAROUSEL DOTS/INDICATORS: purple → green ===== */
+.theme-matrix .bg-brand-purple {
+  background-color: #00cc33 !important;
+}
+
+.theme-matrix .border-brand-purple\/30 {
+  border-color: rgba(0, 204, 51, 0.3) !important;
+}
+
+/* Testimonials "Compartilhe" button */
+.theme-matrix .text-brand-purple {
+  color: #00cc33 !important;
+}
+
+.theme-matrix .hover\:bg-brand-purple:hover {
+  background-color: #00cc33 !important;
+}
+
+/* Loading spinner */
+.theme-matrix .border-brand-purple {
+  border-color: #00cc33 !important;
+}
+
+/* ===== MODULE CARD BUTTON: purple → green ===== */
+.theme-matrix .bg-purple-500,
+.theme-matrix [class*="bg-purple-500"] {
+  background-color: #00cc33 !important;
+}
+
+.theme-matrix [class*="hover:bg-purple-700"]:hover,
+.theme-matrix [class*="hover:bg-purple-800"]:hover {
+  background-color: #009922 !important;
+}
+
+/* ===== TESTIMONIALS HEADER: light matrix ===== */
+/* "Depoimentos" title → black in light mode */
+.theme-matrix:not(.dark) section .text-xl.font-bold.text-gray-900,
+.theme-matrix:not(.dark) section h2.text-gray-900 {
+  color: #000000 !important;
+}
+
+/* Subtitle → gray in light mode */
+.theme-matrix:not(.dark) section .text-sm.text-gray-600 {
+  color: #666666 !important;
+}
+
+/* ===== /planos-publicos PAGE: matrix bg support ===== */
+/* Hide the default animated background in matrix theme */
+.theme-matrix .planos-publicos-bg {
+  display: none !important;
+}

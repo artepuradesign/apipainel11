@@ -1,0 +1,70 @@
+
+/* Degradês do site - topo escuro para transparente */
+.site-gradient-top {
+  background: linear-gradient(180deg, 
+    rgba(155, 135, 245, 0.8) 0%, 
+    rgba(155, 135, 245, 0.6) 20%, 
+    rgba(155, 135, 245, 0.4) 40%, 
+    rgba(155, 135, 245, 0.2) 60%, 
+    rgba(155, 135, 245, 0.1) 80%, 
+    rgba(155, 135, 245, 0) 100%
+  );
+}
+
+.site-gradient-top-dark {
+  background: linear-gradient(180deg, 
+    rgba(81, 33, 177, 0.9) 0%, 
+    rgba(81, 33, 177, 0.7) 20%, 
+    rgba(81, 33, 177, 0.5) 40%, 
+    rgba(81, 33, 177, 0.3) 60%, 
+    rgba(81, 33, 177, 0.15) 80%, 
+    rgba(81, 33, 177, 0) 100%
+  );
+}
+
+/* Degradês do rodapé - transparente para escuro */
+.site-gradient-bottom {
+  background: linear-gradient(0deg, 
+    rgba(155, 135, 245, 0.8) 0%, 
+    rgba(155, 135, 245, 0.6) 20%, 
+    rgba(155, 135, 245, 0.4) 40%, 
+    rgba(155, 135, 245, 0.2) 60%, 
+    rgba(155, 135, 245, 0.1) 80%, 
+    rgba(155, 135, 245, 0) 100%
+  );
+}
+
+.site-gradient-bottom-dark {
+  background: linear-gradient(0deg, 
+    rgba(81, 33, 177, 0.9) 0%, 
+    rgba(81, 33, 177, 0.7) 20%, 
+    rgba(81, 33, 177, 0.5) 40%, 
+    rgba(81, 33, 177, 0.3) 60%, 
+    rgba(81, 33, 177, 0.15) 80%, 
+    rgba(81, 33, 177, 0) 100%
+  );
+}
+
+/* Soft gradients for auth pages */
+.auth-gradient-light {
+  background: radial-gradient(ellipse at top, rgba(155, 135, 245, 0.15), transparent 50%),
+              radial-gradient(ellipse at bottom, rgba(99, 102, 241, 0.1), transparent 50%);
+}
+
+.auth-gradient-dark {
+  background: radial-gradient(ellipse at top, rgba(155, 135, 245, 0.08), transparent 50%),
+              radial-gradient(ellipse at bottom, rgba(99, 102, 241, 0.05), transparent 50%);
+}
+
+/* Enhanced glass morphism effects */
+.glass-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-card {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
