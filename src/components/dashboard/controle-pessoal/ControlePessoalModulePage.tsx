@@ -82,9 +82,14 @@ interface ControlePessoalModulePageProps {
 interface RegisteredClientOption {
   id: string;
   name: string;
+  document?: string;
   phone?: string;
   email?: string;
 }
+
+type CpfLookupMode = 'puxa-tudo' | 'simples';
+
+type CpfLookupResult = Record<string, unknown>;
 
 const moduleIconMap: Record<ControlePessoalModuleType, LucideIcon> = {
   agenda: CalendarDays,
