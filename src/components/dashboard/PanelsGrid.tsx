@@ -429,8 +429,8 @@ const PanelsGrid: React.FC<PanelsGridProps> = ({ activePanels }) => {
                  {panelModules.map((module) => {
                    // Calcular preços - apenas com desconto se houver plano ativo da API
                    // Painel 38 não deve mostrar desconto
-                  const originalPrice = parseFloat(module.price?.toString().replace(',', '.') || '0');
-                   const shouldShowDiscount = effectiveDiscountPercentage > 0 && module.panel_id !== 38;
+                  const originalPrice = getDisplayBasePrice(module);
+                  const shouldShowDiscount = effectiveDiscountPercentage > 0 && module.panel_id !== 38;
 
                    const finalDiscountedPrice = shouldShowDiscount
                      ? (hasActiveSubscription
