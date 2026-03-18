@@ -191,6 +191,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const isSimpleSales = moduleType === 'vendasimples';
   const todayIso = useMemo(() => todayBrasilia(), []);
   const endpoint = moduleEndpointMap[moduleType];
+  const { modules } = useApiModules();
 
   const [records, setRecords] = useState<ControlePessoalRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState(todayIso);
@@ -203,6 +204,12 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const [isQuickClientFormOpen, setIsQuickClientFormOpen] = useState(false);
   const [isQuickClientSubmitting, setIsQuickClientSubmitting] = useState(false);
   const [quickClientForm, setQuickClientForm] = useState({ name: '', phone: '', email: '' });
+  const [isCpfLookupModalOpen, setIsCpfLookupModalOpen] = useState(false);
+  const [cpfLookupDocument, setCpfLookupDocument] = useState('');
+  const [cpfLookupMode, setCpfLookupMode] = useState<CpfLookupMode>('puxa-tudo');
+  const [isCpfLookupSubmitting, setIsCpfLookupSubmitting] = useState(false);
+  const [cpfLookupResult, setCpfLookupResult] = useState<CpfLookupResult | null>(null);
+  const [isSavingLookupClient, setIsSavingLookupClient] = useState(false);
   const clientLookupContainerRef = useRef<HTMLDivElement | null>(null);
   const [form, setForm] = useState({
     title: '',
