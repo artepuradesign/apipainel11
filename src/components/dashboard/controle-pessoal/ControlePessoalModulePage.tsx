@@ -76,6 +76,13 @@ interface ControlePessoalModulePageProps {
   formTitle: string;
 }
 
+interface RegisteredClientOption {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
 const moduleIconMap: Record<ControlePessoalModuleType, LucideIcon> = {
   agenda: CalendarDays,
   financeiro: Wallet,
@@ -182,6 +189,9 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAgendaModalOpen, setIsAgendaModalOpen] = useState(false);
+  const [isClientLookupOpen, setIsClientLookupOpen] = useState(false);
+  const [isLoadingClientLookup, setIsLoadingClientLookup] = useState(false);
+  const [registeredClients, setRegisteredClients] = useState<RegisteredClientOption[]>([]);
   const [form, setForm] = useState({
     title: '',
     date: todayIso,
@@ -275,6 +285,42 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     }
   }, [endpoint, mapApiItemToRecord, user?.id]);
 
+  const loadRegisteredClients = useCallback(async () => {
+    if (!user?.id) return;
+
+    setIsLoadingClientLookup(true);
+    try {
+      const response = await apiRequest<any>('/controlepessoal-novocliente?limit=200&offset=0', { method: 'GET' });
+      const items = Array.isArray(response?.data?.items) ? (response.data.items as ControlePessoalApiItem[]) : [];
+      const seen = new Set<string>();
+      const options = items.reduce<RegisteredClientOption[]>((acc, item) => {
+        const metadata = (item.metadata || {}) as Record<string, unknown>;
+        const name = (item.titulo || item.cliente_nome || '').trim();
+        if (!name) return acc;
+
+        const normalizedName = name.toLowerCase();
+        if (seen.has(normalizedName)) return acc;
+        seen.add(normalizedName);
+
+        acc.push({
+          id: String(item.id),
+          name,
+          phone: typeof metadata.phone === 'string' ? metadata.phone : undefined,
+          email: typeof metadata.email === 'string' ? metadata.email : undefined,
+        });
+
+        return acc;
+      }, []);
+
+      setRegisteredClients(options);
+    } catch (error) {
+      console.error('Erro ao carregar clientes cadastrados:', error);
+      toast.error('Não foi possível carregar clientes cadastrados.');
+    } finally {
+      setIsLoadingClientLookup(false);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     void loadRecords();
   }, [loadRecords]);
@@ -282,6 +328,18 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   useEffect(() => {
     setForm((prev) => ({ ...prev, date: prev.date || selectedDate }));
   }, [selectedDate]);
+
+  const filteredRegisteredClients = useMemo(() => {
+    const query = form.client.trim().toLowerCase();
+    if (!query) return registeredClients;
+
+    return registeredClients.filter((clientOption) => {
+      const hasName = clientOption.name.toLowerCase().includes(query);
+      const hasPhone = clientOption.phone?.toLowerCase().includes(query);
+      const hasEmail = clientOption.email?.toLowerCase().includes(query);
+      return Boolean(hasName || hasPhone || hasEmail);
+    });
+  }, [form.client, registeredClients]);
 
   const appointmentCountByDate = useMemo(() => {
     return records.reduce<Record<string, number>>((acc, record) => {
@@ -664,13 +722,35 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
 
   const handleOpenAgendaModal = useCallback(() => {
     resetForm(selectedDate);
+    setIsClientLookupOpen(false);
     setIsAgendaModalOpen(true);
   }, [resetForm, selectedDate]);
 
   const handleCloseAgendaModal = useCallback(() => {
     setIsAgendaModalOpen(false);
+    setIsClientLookupOpen(false);
     resetForm(selectedDate);
   }, [resetForm, selectedDate]);
+
+  const handleToggleClientLookup = useCallback(async () => {
+    const shouldOpen = !isClientLookupOpen;
+    setIsClientLookupOpen(shouldOpen);
+
+    if (shouldOpen && !registeredClients.length && !isLoadingClientLookup) {
+      await loadRegisteredClients();
+    }
+  }, [isClientLookupOpen, isLoadingClientLookup, loadRegisteredClients, registeredClients.length]);
+
+  const handleSelectClient = useCallback((clientName: string) => {
+    setForm((prev) => ({ ...prev, client: clientName }));
+    setIsClientLookupOpen(false);
+  }, []);
+
+  const handleOpenNewClientPage = useCallback(() => {
+    setIsAgendaModalOpen(false);
+    setIsClientLookupOpen(false);
+    navigate('/dashboard/controlepessoal-novocliente');
+  }, [navigate]);
 
   const handleEditAgendaRecord = useCallback((recordId: string) => {
     const target = records.find((item) => item.id === recordId);
@@ -1778,33 +1858,66 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="agenda-cliente">Cliente (opcional)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="agenda-cliente"
-                      placeholder="Nome do cliente"
-                      value={form.client}
-                      onChange={(e) => setForm((prev) => ({ ...prev, client: e.target.value }))}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
-                      aria-label="Buscar cliente cadastrado"
-                      title="Buscar cliente cadastrado"
-                    >
-                      <Search className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
-                      aria-label="Adicionar novo cliente"
-                      title="Adicionar novo cliente"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="agenda-cliente"
+                        placeholder="Nome do cliente"
+                        value={form.client}
+                        onChange={(e) => setForm((prev) => ({ ...prev, client: e.target.value }))}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
+                        aria-label="Buscar cliente cadastrado"
+                        title="Buscar cliente cadastrado"
+                        onClick={() => void handleToggleClientLookup()}
+                      >
+                        <Search className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
+                        aria-label="Adicionar novo cliente"
+                        title="Adicionar novo cliente"
+                        onClick={handleOpenNewClientPage}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {isClientLookupOpen ? (
+                      <div className="max-h-44 overflow-y-auto rounded-md border border-border bg-card p-2">
+                        {isLoadingClientLookup ? (
+                          <p className="px-2 py-1 text-sm text-muted-foreground">Carregando clientes...</p>
+                        ) : filteredRegisteredClients.length === 0 ? (
+                          <p className="px-2 py-1 text-sm text-muted-foreground">Nenhum cliente cadastrado encontrado.</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {filteredRegisteredClients.map((clientOption) => (
+                              <Button
+                                key={clientOption.id}
+                                type="button"
+                                variant="ghost"
+                                className="h-auto w-full justify-start px-2 py-2 text-left"
+                                onClick={() => handleSelectClient(clientOption.name)}
+                              >
+                                <span className="text-sm font-medium text-foreground">{clientOption.name}</span>
+                                {(clientOption.phone || clientOption.email) ? (
+                                  <span className="block text-xs text-muted-foreground">
+                                    {[clientOption.phone, clientOption.email].filter(Boolean).join(' • ')}
+                                  </span>
+                                ) : null}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div className="space-y-2">
