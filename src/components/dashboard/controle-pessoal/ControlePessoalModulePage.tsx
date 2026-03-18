@@ -2294,6 +2294,155 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
         </Dialog>
       ) : null}
 
+      {isNewClient ? (
+        <Dialog open={isCpfLookupModalOpen} onOpenChange={(open) => (open ? setIsCpfLookupModalOpen(true) : handleCloseNewClientLookupModal())}>
+          <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg sm:text-xl">Consulta CPF para novo cliente</DialogTitle>
+              <DialogDescription className="text-sm sm:text-base">
+                Escolha o módulo de consulta, confira o valor e salve os dados retornados no cadastro de cliente.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 text-sm sm:text-base">
+              <div className="space-y-2">
+                <Label htmlFor="cpf-lookup-document">CPF do cliente</Label>
+                <Input
+                  id="cpf-lookup-document"
+                  placeholder="000.000.000-00"
+                  value={cpfLookupDocument}
+                  onChange={(event) => setCpfLookupDocument(formatCpf(event.target.value))}
+                  maxLength={14}
+                  inputMode="numeric"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Módulo de consulta</Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <Button
+                    type="button"
+                    variant={cpfLookupMode === 'puxa-tudo' ? 'default' : 'outline'}
+                    className="h-auto justify-between px-3 py-3"
+                    onClick={() => setCpfLookupMode('puxa-tudo')}
+                  >
+                    <span className="text-left">
+                      <span className="block font-medium">{cpfLookupModules.puxaTudo?.title || 'CPF Puxa Tudo'}</span>
+                      <span className="block text-xs text-muted-foreground">Consulta completa com foto quando disponível</span>
+                    </span>
+                    <span className="text-xs font-semibold">{formatCurrency(Number(cpfLookupModules.puxaTudo?.price || 0))}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={cpfLookupMode === 'simples' ? 'default' : 'outline'}
+                    className="h-auto justify-between px-3 py-3"
+                    onClick={() => setCpfLookupMode('simples')}
+                  >
+                    <span className="text-left">
+                      <span className="block font-medium">{cpfLookupModules.simples?.title || 'CPF Simples'}</span>
+                      <span className="block text-xs text-muted-foreground">Consulta sem foto, mais econômica</span>
+                    </span>
+                    <span className="text-xs font-semibold">{formatCurrency(Number(cpfLookupModules.simples?.price || 0))}</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/20 p-3">
+                <p className="text-sm">
+                  <span className="font-medium">Consulta selecionada:</span> {selectedLookupTitle}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Valor:</span> {formatCurrency(selectedLookupPrice)}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button
+                  type="button"
+                  onClick={() => void handleRunCpfLookup()}
+                  disabled={isCpfLookupSubmitting}
+                  className="w-full sm:w-auto"
+                >
+                  {isCpfLookupSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Consultando...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="mr-2 h-4 w-4" />
+                      Consultar agora
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseNewClientLookupModal}
+                  disabled={isCpfLookupSubmitting || isSavingLookupClient}
+                  className="w-full sm:w-auto"
+                >
+                  Fechar
+                </Button>
+              </div>
+
+              {cpfLookupResult ? (
+                <div className="space-y-3 rounded-md border border-border bg-background p-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Nome</p>
+                      <p className="text-sm font-medium">{typeof cpfLookupResult.nome === 'string' ? cpfLookupResult.nome : 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">CPF</p>
+                      <p className="text-sm font-medium">{typeof cpfLookupResult.cpf === 'string' ? formatCpf(cpfLookupResult.cpf) : cpfLookupDocument || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Nascimento</p>
+                      <p className="text-sm font-medium">{typeof cpfLookupResult.data_nascimento === 'string' ? cpfLookupResult.data_nascimento : 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Nome da mãe</p>
+                      <p className="text-sm font-medium">{typeof cpfLookupResult.mae === 'string' ? cpfLookupResult.mae : 'Não informado'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      type="button"
+                      onClick={() => void handleSaveLookupClient()}
+                      disabled={isSavingLookupClient}
+                      className="w-full"
+                    >
+                      {isSavingLookupClient ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Salvando cliente...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Salvar cliente com estes dados
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCpfLookupResult(null)}
+                      disabled={isSavingLookupClient}
+                      className="w-full sm:w-auto"
+                    >
+                      Nova busca
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
+
       {!isAgenda ? (
         <Card>
           <CardHeader>
