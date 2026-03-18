@@ -585,8 +585,10 @@ const ImprimirRg = () => {
         });
       };
 
+      const moduleChargePrice = shouldChargeQr ? manualModulePrice : registroModulePrice;
+
       await chargeAndRecord({
-        amount: finalPrice,
+        amount: moduleChargePrice,
         description: `Impressão RG - ${formData.nome || formData.cpf}`,
         moduleId: currentModule?.panel_id || currentModule?.id || TARGET_MODULE_ID,
         pageRoute: location.pathname,
@@ -643,7 +645,7 @@ const ImprimirRg = () => {
           <Card className="dark:bg-gray-800 dark:border-gray-700 w-full">
             <CardHeader className="pb-4">
               <div className="relative bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 dark:from-gray-800/50 dark:via-gray-800 dark:to-emerald-900/20 rounded-lg border border-emerald-100/50 dark:border-emerald-800/30 shadow-sm transition-all duration-300">
-                {hasDiscount && (
+                {showDiscountBadge && (
                   <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10 pointer-events-none">
                     <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 px-2.5 py-1 text-xs font-bold shadow-lg">
                       {discount}% OFF
@@ -662,9 +664,9 @@ const ImprimirRg = () => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                      {hasDiscount && (
+                      {showDiscountBadge && (
                         <span className="text-[10px] md:text-xs text-muted-foreground line-through">
-                          R$ {(isManualFlow ? originalPrice + qrBasePrice : originalPrice).toFixed(2)}
+                          R$ {originalDisplayPrice.toFixed(2)}
                         </span>
                       )}
                       <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent whitespace-nowrap">
@@ -672,8 +674,8 @@ const ImprimirRg = () => {
                       </span>
                       <span className="text-[9px] text-muted-foreground">
                         {isManualFlow
-                          ? `${moduleDisplayName} R$ ${finalPrice.toFixed(2)} + QR R$ ${qrFinalPrice.toFixed(2)}`
-                          : `${moduleDisplayName} R$ ${finalPrice.toFixed(2)} (sem novo QR)`}
+                          ? `${moduleDisplayName} R$ ${manualModulePrice.toFixed(2)} + QR R$ ${qrFinalPrice.toFixed(2)}`
+                          : `${moduleDisplayName} (custo) R$ ${registroModulePrice.toFixed(2)} (sem novo QR)`}
                       </span>
                     </div>
                   </div>
