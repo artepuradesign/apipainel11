@@ -722,13 +722,35 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
 
   const handleOpenAgendaModal = useCallback(() => {
     resetForm(selectedDate);
+    setIsClientLookupOpen(false);
     setIsAgendaModalOpen(true);
   }, [resetForm, selectedDate]);
 
   const handleCloseAgendaModal = useCallback(() => {
     setIsAgendaModalOpen(false);
+    setIsClientLookupOpen(false);
     resetForm(selectedDate);
   }, [resetForm, selectedDate]);
+
+  const handleToggleClientLookup = useCallback(async () => {
+    const shouldOpen = !isClientLookupOpen;
+    setIsClientLookupOpen(shouldOpen);
+
+    if (shouldOpen && !registeredClients.length && !isLoadingClientLookup) {
+      await loadRegisteredClients();
+    }
+  }, [isClientLookupOpen, isLoadingClientLookup, loadRegisteredClients, registeredClients.length]);
+
+  const handleSelectClient = useCallback((clientName: string) => {
+    setForm((prev) => ({ ...prev, client: clientName }));
+    setIsClientLookupOpen(false);
+  }, []);
+
+  const handleOpenNewClientPage = useCallback(() => {
+    setIsAgendaModalOpen(false);
+    setIsClientLookupOpen(false);
+    navigate('/dashboard/controlepessoal-novocliente');
+  }, [navigate]);
 
   const handleEditAgendaRecord = useCallback((recordId: string) => {
     const target = records.find((item) => item.id === recordId);
