@@ -727,34 +727,111 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const handleOpenAgendaModal = useCallback(() => {
     resetForm(selectedDate);
     setIsClientLookupOpen(false);
+    setIsQuickClientFormOpen(false);
+    setQuickClientForm({ name: '', phone: '', email: '' });
     setIsAgendaModalOpen(true);
   }, [resetForm, selectedDate]);
 
   const handleCloseAgendaModal = useCallback(() => {
     setIsAgendaModalOpen(false);
     setIsClientLookupOpen(false);
+    setIsQuickClientFormOpen(false);
+    setQuickClientForm({ name: '', phone: '', email: '' });
     resetForm(selectedDate);
   }, [resetForm, selectedDate]);
 
-  const handleToggleClientLookup = useCallback(async () => {
-    const shouldOpen = !isClientLookupOpen;
-    setIsClientLookupOpen(shouldOpen);
-
-    if (shouldOpen && !registeredClients.length && !isLoadingClientLookup) {
+  const ensureClientLookupOpen = useCallback(async () => {
+    setIsClientLookupOpen(true);
+    if (!registeredClients.length && !isLoadingClientLookup) {
       await loadRegisteredClients();
     }
-  }, [isClientLookupOpen, isLoadingClientLookup, loadRegisteredClients, registeredClients.length]);
+  }, [isLoadingClientLookup, loadRegisteredClients, registeredClients.length]);
+
+  const handleToggleClientLookup = useCallback(async () => {
+    if (isClientLookupOpen) {
+      setIsClientLookupOpen(false);
+      return;
+    }
+
+    await ensureClientLookupOpen();
+  }, [ensureClientLookupOpen, isClientLookupOpen]);
+
+  const handleClientInputChange = useCallback(async (value: string) => {
+    setForm((prev) => ({ ...prev, client: value }));
+    if (!isClientLookupOpen) {
+      await ensureClientLookupOpen();
+    }
+  }, [ensureClientLookupOpen, isClientLookupOpen]);
 
   const handleSelectClient = useCallback((clientName: string) => {
     setForm((prev) => ({ ...prev, client: clientName }));
     setIsClientLookupOpen(false);
   }, []);
 
-  const handleOpenNewClientPage = useCallback(() => {
-    setIsAgendaModalOpen(false);
-    setIsClientLookupOpen(false);
-    navigate('/dashboard/controlepessoal-novocliente');
-  }, [navigate]);
+  const handleToggleQuickClientForm = useCallback(() => {
+    setIsQuickClientFormOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setQuickClientForm((current) => ({ ...current, name: current.name || form.client.trim() }));
+      }
+      return next;
+    });
+  }, [form.client]);
+
+  const handleSaveQuickClient = useCallback(async () => {
+    const clientName = quickClientForm.name.trim();
+    const phone = quickClientForm.phone.trim();
+    const email = quickClientForm.email.trim();
+
+    if (!clientName) {
+      toast.error('Informe o nome do cliente para o cadastro rápido.');
+      return;
+    }
+
+    if (!phone && !email) {
+      toast.error('Informe telefone ou e-mail para concluir o cadastro rápido.');
+      return;
+    }
+
+    setIsQuickClientSubmitting(true);
+
+    try {
+      const response = await apiRequest<any>('/controlepessoal-novocliente', {
+        method: 'POST',
+        body: JSON.stringify({
+          titulo: clientName,
+          data_referencia: todayBrasilia(),
+          descricao: null,
+          cliente_nome: clientName,
+          valor: 0,
+          status: 'pendente',
+          metadata: {
+            phone,
+            email,
+            source: clientSources[0],
+            stage: 'novo',
+            nextContact: todayBrasilia(),
+          },
+        }),
+      });
+
+      if (!response?.success) {
+        throw new Error(response?.error || 'Falha ao cadastrar cliente.');
+      }
+
+      await loadRegisteredClients();
+      setForm((prev) => ({ ...prev, client: clientName }));
+      setIsQuickClientFormOpen(false);
+      setQuickClientForm({ name: '', phone: '', email: '' });
+      setIsClientLookupOpen(false);
+      toast.success('Cliente cadastrado com sucesso.');
+    } catch (error) {
+      console.error('Erro no cadastro rápido de cliente:', error);
+      toast.error(error instanceof Error ? error.message : 'Não foi possível cadastrar o cliente.');
+    } finally {
+      setIsQuickClientSubmitting(false);
+    }
+  }, [loadRegisteredClients, quickClientForm.email, quickClientForm.name, quickClientForm.phone]);
 
   const handleEditAgendaRecord = useCallback((recordId: string) => {
     const target = records.find((item) => item.id === recordId);
