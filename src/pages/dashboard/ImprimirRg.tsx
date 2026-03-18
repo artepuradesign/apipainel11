@@ -231,12 +231,6 @@ const ImprimirRg = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const readFileAsDataUrl = (file: File, cb: (url: string) => void) => {
-    const reader = new FileReader();
-    reader.onloadend = () => cb(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
