@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DayContentProps } from 'react-day-picker';
-import { LucideIcon, Plus, PlusCircle, Search, CalendarDays, Wallet, Users, FileText, ShoppingCart, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { LucideIcon, Plus, PlusCircle, Search, CalendarDays, Wallet, Users, FileText, ShoppingCart, Pencil, Trash2, ChevronUp, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { addMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -17,8 +17,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useApiModules } from '@/hooks/useApiModules';
 import { todayBrasilia } from '@/utils/timezone';
 import { formatCpf, formatPhone } from '@/utils/formatters';
+import { baseCpfService } from '@/services/baseCpfService';
+import { consultasCpfService } from '@/services/consultasCpfService';
 import { apiRequest } from '@/config/api';
 import { toast } from 'sonner';
 
