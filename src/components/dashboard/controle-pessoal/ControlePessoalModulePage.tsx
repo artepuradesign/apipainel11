@@ -293,24 +293,24 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       const response = await apiRequest<any>('/controlepessoal-novocliente?limit=200&offset=0', { method: 'GET' });
       const items = Array.isArray(response?.data?.items) ? (response.data.items as ControlePessoalApiItem[]) : [];
       const seen = new Set<string>();
-      const options = items
-        .map((item) => {
-          const metadata = (item.metadata || {}) as Record<string, unknown>;
-          const name = (item.titulo || item.cliente_nome || '').trim();
-          if (!name) return null;
+      const options = items.reduce<RegisteredClientOption[]>((acc, item) => {
+        const metadata = (item.metadata || {}) as Record<string, unknown>;
+        const name = (item.titulo || item.cliente_nome || '').trim();
+        if (!name) return acc;
 
-          const normalizedName = name.toLowerCase();
-          if (seen.has(normalizedName)) return null;
-          seen.add(normalizedName);
+        const normalizedName = name.toLowerCase();
+        if (seen.has(normalizedName)) return acc;
+        seen.add(normalizedName);
 
-          return {
-            id: String(item.id),
-            name,
-            phone: typeof metadata.phone === 'string' ? metadata.phone : undefined,
-            email: typeof metadata.email === 'string' ? metadata.email : undefined,
-          } satisfies RegisteredClientOption;
-        })
-        .filter((item): item is RegisteredClientOption => Boolean(item));
+        acc.push({
+          id: String(item.id),
+          name,
+          phone: typeof metadata.phone === 'string' ? metadata.phone : undefined,
+          email: typeof metadata.email === 'string' ? metadata.email : undefined,
+        });
+
+        return acc;
+      }, []);
 
       setRegisteredClients(options);
     } catch (error) {
