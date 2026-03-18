@@ -1789,7 +1789,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-10 w-10 rounded-full"
+                      className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
                       aria-label="Buscar cliente cadastrado"
                       title="Buscar cliente cadastrado"
                     >
@@ -1799,7 +1799,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-10 w-10 rounded-full"
+                      className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
                       aria-label="Adicionar novo cliente"
                       title="Adicionar novo cliente"
                     >
