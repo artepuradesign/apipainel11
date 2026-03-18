@@ -350,11 +350,56 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
 
     return registeredClients.filter((clientOption) => {
       const hasName = clientOption.name.toLowerCase().includes(query);
+      const hasDocument = clientOption.document?.toLowerCase().includes(query);
       const hasPhone = clientOption.phone?.toLowerCase().includes(query);
       const hasEmail = clientOption.email?.toLowerCase().includes(query);
-      return Boolean(hasName || hasPhone || hasEmail);
+      return Boolean(hasName || hasDocument || hasPhone || hasEmail);
     });
   }, [form.client, registeredClients]);
+
+  const normalizeModuleRoute = useCallback((rawValue?: string | null) => {
+    if (!rawValue) return '';
+    const cleaned = rawValue.trim();
+    if (!cleaned) return '';
+    if (cleaned.startsWith('/dashboard/')) return cleaned;
+    if (cleaned.startsWith('dashboard/')) return `/${cleaned}`;
+    if (cleaned.startsWith('/')) return `/dashboard${cleaned}`;
+    return `/dashboard/${cleaned}`;
+  }, []);
+
+  const cpfLookupModules = useMemo(() => {
+    const resolveByRoute = (route: string) => {
+      const normalizedRoute = normalizeModuleRoute(route);
+      return modules.find((module) => {
+        const candidates = [
+          normalizeModuleRoute(module.path || ''),
+          normalizeModuleRoute(module.api_endpoint || ''),
+          normalizeModuleRoute(module.slug || ''),
+        ].filter(Boolean);
+
+        return candidates.includes(normalizedRoute);
+      });
+    };
+
+    return {
+      puxaTudo: resolveByRoute('/dashboard/consultar-cpf-puxa-tudo'),
+      simples: resolveByRoute('/dashboard/consultar-cpf-simples'),
+    };
+  }, [modules, normalizeModuleRoute]);
+
+  const selectedLookupPrice = useMemo(() => {
+    const selectedModule = cpfLookupMode === 'puxa-tudo' ? cpfLookupModules.puxaTudo : cpfLookupModules.simples;
+    const rawPrice = Number(selectedModule?.price ?? 0);
+    return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
+  }, [cpfLookupMode, cpfLookupModules.puxaTudo, cpfLookupModules.simples]);
+
+  const selectedLookupTitle = useMemo(() => {
+    if (cpfLookupMode === 'puxa-tudo') {
+      return cpfLookupModules.puxaTudo?.title || 'CPF Puxa Tudo';
+    }
+
+    return cpfLookupModules.simples?.title || 'CPF Simples';
+  }, [cpfLookupMode, cpfLookupModules.puxaTudo?.title, cpfLookupModules.simples?.title]);
 
   useEffect(() => {
     if (!isClientLookupOpen) return;
