@@ -27,6 +27,7 @@ import FloatingPendingPix from '@/components/payment/FloatingPendingPix';
 import QRCode from 'react-qr-code';
 import { API_BASE_URL } from '@/config/apiConfig';
 import { formatMoneyBR } from '@/utils/formatters';
+import { getModulePrice } from '@/utils/modulePrice';
 
 interface PanelsGridProps {
   activePanels: Panel[];
@@ -156,6 +157,28 @@ const PanelsGrid: React.FC<PanelsGridProps> = ({ activePanels }) => {
     if (!raw.includes('/')) return `/dashboard/${raw}`;
     // Fallback legado
     return `/module/${module.slug}`;
+  };
+
+  const parseModulePrice = (value: unknown): number => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const normalized = String(value ?? '').replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const getDisplayBasePrice = (module: any): number => {
+    const route = getModulePageRoute(module);
+    const modulePrice = parseModulePrice(module?.price);
+
+    if (route !== '/dashboard/imprimir-rg') {
+      return modulePrice;
+    }
+
+    const qrModule = (modules || []).find((m: any) => getModulePageRoute(m) === '/dashboard/qrcode-rg-1m');
+    const qrPriceFromApi = parseModulePrice(qrModule?.price);
+    const qrPrice = qrPriceFromApi > 0 ? qrPriceFromApi : getModulePrice('/dashboard/qrcode-rg-1m');
+
+    return modulePrice + qrPrice;
   };
 
   // Comparação financeira em centavos para evitar erro de ponto flutuante
@@ -318,8 +341,8 @@ const PanelsGrid: React.FC<PanelsGridProps> = ({ activePanels }) => {
       return;
     }
 
-    // Calcular preço - apenas com desconto se houver plano ativo
-    const originalPrice = parseFloat(module.price?.toString().replace(',', '.') || '0');
+    // Calcular preço (Imprimir RG usa módulo + QR 1M no dashboard)
+    const originalPrice = getDisplayBasePrice(module);
 
     const shouldApplyDiscountOnClick = effectiveDiscountPercentage > 0 && module.panel_id !== 38;
 
@@ -406,8 +429,8 @@ const PanelsGrid: React.FC<PanelsGridProps> = ({ activePanels }) => {
                  {panelModules.map((module) => {
                    // Calcular preços - apenas com desconto se houver plano ativo da API
                    // Painel 38 não deve mostrar desconto
-                  const originalPrice = parseFloat(module.price?.toString().replace(',', '.') || '0');
-                   const shouldShowDiscount = effectiveDiscountPercentage > 0 && module.panel_id !== 38;
+                  const originalPrice = getDisplayBasePrice(module);
+                  const shouldShowDiscount = effectiveDiscountPercentage > 0 && module.panel_id !== 38;
 
                    const finalDiscountedPrice = shouldShowDiscount
                      ? (hasActiveSubscription

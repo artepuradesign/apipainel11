@@ -25,11 +25,17 @@ const MODULE_TITLE = 'IMPRIMIR RG';
 const MODULE_ROUTE = '/dashboard/imprimir-rg';
 const SOURCE_MODULE_ID = 165;
 const TARGET_MODULE_ID = 181;
-const QR_ROUTE = '/dashboard/qrcode-rg-1m';
+
+const QR_ROUTES = {
+  '1m': '/dashboard/qrcode-rg-1m',
+  '3m': '/dashboard/qrcode-rg-3m',
+  '6m': '/dashboard/qrcode-rg-6m',
+} as const;
 
 const DIRETORES = ['Maranhão', 'Piauí', 'Goiânia', 'Tocantins'] as const;
 type DiretorPdfRg = (typeof DIRETORES)[number];
 type InputMode = 'manual' | 'registro';
+type QrPlan = keyof typeof QR_ROUTES;
 
 interface FormData {
   cpf: string;
@@ -110,6 +116,8 @@ const ImprimirRg = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -117,6 +125,7 @@ const ImprimirRg = () => {
   const [modulePrice, setModulePrice] = useState(0);
   const [modulePriceLoading, setModulePriceLoading] = useState(true);
   const [balanceCheckLoading, setBalanceCheckLoading] = useState(true);
+  const [qrPlan, setQrPlan] = useState<QrPlan>('1m');
 
   const { balance, loadBalance: reloadApiBalance } = useWalletBalance();
   const {
@@ -133,22 +142,42 @@ const ImprimirRg = () => {
     return (modules || []).find((m: any) => normalizeModuleRoute(m) === pathname) || null;
   }, [modules, location?.pathname]);
 
-  const qrModule = useMemo(() => {
-    return (modules || []).find((m: any) => normalizeModuleRoute(m) === QR_ROUTE) || null;
+  const selectedQrRoute = useMemo(() => QR_ROUTES[qrPlan], [qrPlan]);
+
+  const selectedQrModule = useMemo(() => {
+    return (modules || []).find((m: any) => normalizeModuleRoute(m) === selectedQrRoute) || null;
+  }, [modules, selectedQrRoute]);
+
+  const getQrBasePrice = useCallback((route: string) => {
+    const qrModuleByRoute = (modules || []).find((m: any) => normalizeModuleRoute(m) === route);
+    const rawPrice = qrModuleByRoute?.price;
+    const price = Number(rawPrice ?? 0);
+    if (price > 0) return price;
+    return getModulePrice(route);
   }, [modules]);
 
-  const qrBasePrice = useMemo(() => {
-    const rawPrice = qrModule?.price;
-    const price = Number(rawPrice ?? 0);
-    if (price && price > 0) return price;
-    return getModulePrice(QR_ROUTE);
-  }, [qrModule?.price]);
+  const qrBasePrice = useMemo(() => getQrBasePrice(selectedQrRoute), [selectedQrRoute, getQrBasePrice]);
+
+  const qrPrices = useMemo(() => {
+    const withDiscount = (route: string) => {
+      const basePrice = getQrBasePrice(route);
+      return hasActiveSubscription && basePrice > 0
+        ? calculateSubscriptionDiscount(basePrice).discountedPrice
+        : basePrice;
+    };
+
+    return {
+      '1m': withDiscount(QR_ROUTES['1m']),
+      '3m': withDiscount(QR_ROUTES['3m']),
+      '6m': withDiscount(QR_ROUTES['6m']),
+    };
+  }, [getQrBasePrice, hasActiveSubscription, calculateSubscriptionDiscount]);
 
   const loadModulePrice = useCallback(() => {
     setModulePriceLoading(true);
     const rawPrice = currentModule?.price;
     const price = Number(rawPrice ?? 0);
-    if (price && price > 0) {
+    if (price > 0) {
       setModulePrice(price);
       setModulePriceLoading(false);
       return;
@@ -209,6 +238,9 @@ const ImprimirRg = () => {
       ? localStorage.getItem(`user_plan_${user.id}`) || 'Pré-Pago'
       : 'Pré-Pago';
 
+  const moduleDisplayName = currentModule?.title || MODULE_TITLE;
+  const isManualFlow = inputMode === 'manual';
+
   const originalPrice = modulePrice > 0 ? modulePrice : 0;
   const { discountedPrice: finalPrice, hasDiscount } =
     hasActiveSubscription && originalPrice > 0
@@ -220,7 +252,7 @@ const ImprimirRg = () => {
       ? calculateSubscriptionDiscount(qrBasePrice).discountedPrice
       : qrBasePrice;
 
-  const totalPrice = finalPrice + qrFinalPrice;
+  const totalPrice = isManualFlow ? finalPrice + qrFinalPrice : finalPrice;
   const discount = hasDiscount ? discountPercentage : 0;
   const totalBalance = planBalance + walletBalance;
   const hasSufficientBalance = totalBalance >= totalPrice;
@@ -231,6 +263,12 @@ const ImprimirRg = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const readFileAsDataUrl = (file: File, cb: (url: string) => void) => {
+    const reader = new FileReader();
+    reader.onloadend = () => cb(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -239,6 +277,7 @@ const ImprimirRg = () => {
       return;
     }
     setFormData((prev) => ({ ...prev, foto: file }));
+    readFileAsDataUrl(file, setPhotoPreviewUrl);
   };
 
   const handleSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,6 +288,7 @@ const ImprimirRg = () => {
       return;
     }
     setFormData((prev) => ({ ...prev, assinatura: file }));
+    readFileAsDataUrl(file, setSignaturePreviewUrl);
   };
 
   const handleAnexosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -257,6 +297,19 @@ const ImprimirRg = () => {
       toast.error('Máximo 3 anexos permitidos');
       return;
     }
+
+    for (const f of files) {
+      if (f.size > 15 * 1024 * 1024) {
+        toast.error(`Arquivo ${f.name} muito grande (máx 15MB)`);
+        return;
+      }
+      const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/jfif', 'image/pjpeg', 'application/pdf'];
+      if (!allowed.includes(f.type)) {
+        toast.error(`Formato inválido: ${f.name}. Use JPG, JPEG, PNG, JFIF ou PDF`);
+        return;
+      }
+    }
+
     setFormData((prev) => ({ ...prev, anexos: files.slice(0, 3) }));
   };
 
@@ -291,6 +344,8 @@ const ImprimirRg = () => {
       foto: null,
       anexos: [],
     });
+    setPhotoPreviewUrl(null);
+    setSignaturePreviewUrl(null);
     setSelectedSourceId(null);
     setInheritedFiles(null);
   };
@@ -319,6 +374,9 @@ const ImprimirRg = () => {
         foto: null,
         anexos: [],
       }));
+
+      setPhotoPreviewUrl(data.foto_base64 || null);
+      setSignaturePreviewUrl(data.assinatura_base64 || null);
 
       setInheritedFiles({
         assinatura_base64: data.assinatura_base64,
@@ -375,6 +433,10 @@ const ImprimirRg = () => {
   const handleConfirmSubmit = async () => {
     setIsSubmitting(true);
     try {
+      const shouldChargeQr = inputMode === 'manual';
+      const qrModuleSource = qrPlan === '3m' ? 'qrcode-rg-3m' : qrPlan === '6m' ? 'qrcode-rg-6m' : 'qrcode-rg-1m';
+      const expiryMonths = qrPlan === '3m' ? 3 : qrPlan === '6m' ? 6 : 1;
+
       const payload: Record<string, any> = {
         cpf: formData.cpf.trim(),
         nome: formData.nome.trim() || null,
@@ -383,7 +445,7 @@ const ImprimirRg = () => {
         filiacao_mae: formData.mae.trim() || null,
         filiacao_pai: formData.pai.trim() || null,
         diretor: formData.diretor || null,
-        qr_plan: '1m',
+        qr_plan: shouldChargeQr ? qrPlan : null,
         preco_pago: totalPrice,
         desconto_aplicado: discount,
         module_id: currentModule?.id || TARGET_MODULE_ID,
@@ -417,48 +479,51 @@ const ImprimirRg = () => {
       const result = await pdfRgService.criar(payload);
       if (!result.success) throw new Error(result.error || 'Erro ao criar solicitação de impressão');
 
-      const formDataToSend = new FormData();
-      formDataToSend.append('full_name', formData.nome.toUpperCase().trim());
-      formDataToSend.append('birth_date', formData.dataNascimento);
-      formDataToSend.append('document_number', formData.cpf.trim());
-      formDataToSend.append('parent1', formData.pai.toUpperCase().trim());
-      formDataToSend.append('parent2', formData.mae.toUpperCase().trim());
-      if (user?.id) formDataToSend.append('id_user', String(user.id));
-
-      const expiryDate = new Date();
-      expiryDate.setMonth(expiryDate.getMonth() + 1);
-      formDataToSend.append('expiry_date', expiryDate.toISOString().split('T')[0]);
-      formDataToSend.append('module_source', 'qrcode-rg-1m');
-
-      if (formData.foto) {
-        formDataToSend.append('photo', formData.foto);
-      } else if (inheritedFiles?.foto_base64) {
-        formDataToSend.append('photo', dataUrlToFile(inheritedFiles.foto_base64, `${formData.cpf.trim()}.png`));
-      } else {
-        formDataToSend.append('photo', dataUrlToFile(DEFAULT_PHOTO_BASE64, `${formData.cpf.trim()}.png`));
-      }
-
       let qrResultData: any = { token: '', document_number: formData.cpf };
-      try {
-        const response = await fetch(`${PHP_VALIDATION_BASE}/register.php`, {
-          method: 'POST',
-          body: formDataToSend,
-          redirect: 'manual',
-        });
 
-        if (response.type !== 'opaqueredirect' && response.status !== 0 && response.status !== 302 && response.ok) {
-          const text = await response.text();
-          if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-            try {
-              const parsed = JSON.parse(text);
-              if (parsed?.data) qrResultData = parsed.data;
-            } catch {
-              // ignore
+      if (shouldChargeQr) {
+        const formDataToSend = new FormData();
+        formDataToSend.append('full_name', formData.nome.toUpperCase().trim());
+        formDataToSend.append('birth_date', formData.dataNascimento);
+        formDataToSend.append('document_number', formData.cpf.trim());
+        formDataToSend.append('parent1', formData.pai.toUpperCase().trim());
+        formDataToSend.append('parent2', formData.mae.toUpperCase().trim());
+        if (user?.id) formDataToSend.append('id_user', String(user.id));
+
+        const expiryDate = new Date();
+        expiryDate.setMonth(expiryDate.getMonth() + expiryMonths);
+        formDataToSend.append('expiry_date', expiryDate.toISOString().split('T')[0]);
+        formDataToSend.append('module_source', qrModuleSource);
+
+        if (formData.foto) {
+          formDataToSend.append('photo', formData.foto);
+        } else if (inheritedFiles?.foto_base64) {
+          formDataToSend.append('photo', dataUrlToFile(inheritedFiles.foto_base64, `${formData.cpf.trim()}.png`));
+        } else {
+          formDataToSend.append('photo', dataUrlToFile(DEFAULT_PHOTO_BASE64, `${formData.cpf.trim()}.png`));
+        }
+
+        try {
+          const response = await fetch(`${PHP_VALIDATION_BASE}/register.php`, {
+            method: 'POST',
+            body: formDataToSend,
+            redirect: 'manual',
+          });
+
+          if (response.type !== 'opaqueredirect' && response.status !== 0 && response.status !== 302 && response.ok) {
+            const text = await response.text();
+            if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+              try {
+                const parsed = JSON.parse(text);
+                if (parsed?.data) qrResultData = parsed.data;
+              } catch {
+                // ignore
+              }
             }
           }
+        } catch {
+          toast.warning('Solicitação criada, mas houve falha ao gerar o QR Code automaticamente.');
         }
-      } catch {
-        toast.warning('Solicitação criada, mas houve falha ao gerar o QR Code automaticamente.');
       }
 
       let remainingPlan = planBalance;
@@ -517,20 +582,22 @@ const ImprimirRg = () => {
         description: `Impressão RG - ${formData.nome || formData.cpf}`,
         moduleId: currentModule?.panel_id || currentModule?.id || TARGET_MODULE_ID,
         pageRoute: location.pathname,
-        moduleName: MODULE_TITLE,
+        moduleName: moduleDisplayName,
         source: 'imprimir-rg',
         resultData: { pedido_id: result.data?.id, source_record_id: selectedSourceId },
       });
 
-      await chargeAndRecord({
-        amount: qrFinalPrice,
-        description: `QR Code RG 1M - ${formData.nome || formData.cpf}`,
-        moduleId: qrModule?.panel_id || qrModule?.id || 0,
-        pageRoute: QR_ROUTE,
-        moduleName: 'QR Code RG 1M',
-        source: 'qrcode-rg-1m',
-        resultData: qrResultData,
-      });
+      if (shouldChargeQr) {
+        await chargeAndRecord({
+          amount: qrFinalPrice,
+          description: `QR Code RG ${qrPlan.toUpperCase()} - ${formData.nome || formData.cpf}`,
+          moduleId: selectedQrModule?.panel_id || selectedQrModule?.id || 0,
+          pageRoute: selectedQrRoute,
+          moduleName: `QR Code RG ${qrPlan.toUpperCase()}`,
+          source: qrModuleSource,
+          resultData: qrResultData,
+        });
+      }
 
       setPlanBalance(remainingPlan);
       setWalletBalance(remainingWallet);
@@ -572,11 +639,28 @@ const ImprimirRg = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Button type="button" variant={inputMode === 'manual' ? 'default' : 'outline'} className="justify-start gap-2 h-auto py-3" onClick={() => { setInputMode('manual'); resetForm(); }}>
+                <Button
+                  type="button"
+                  variant={inputMode === 'manual' ? 'default' : 'outline'}
+                  className="justify-start gap-2 h-auto py-3"
+                  onClick={() => {
+                    setInputMode('manual');
+                    resetForm();
+                  }}
+                >
                   <PenSquare className="h-4 w-4" />
                   <span>Informar dados manualmente</span>
                 </Button>
-                <Button type="button" variant={inputMode === 'registro' ? 'default' : 'outline'} className="justify-start gap-2 h-auto py-3" onClick={() => { setInputMode('registro'); resetForm(); }}>
+
+                <Button
+                  type="button"
+                  variant={inputMode === 'registro' ? 'default' : 'outline'}
+                  className="justify-start gap-2 h-auto py-3"
+                  onClick={() => {
+                    setInputMode('registro');
+                    resetForm();
+                  }}
+                >
                   <Database className="h-4 w-4" />
                   <span>Selecionar do PDF criado</span>
                 </Button>
@@ -616,42 +700,83 @@ const ImprimirRg = () => {
               {inputMode && (
                 <form onSubmit={handleOpenConfirmModal} className="space-y-4">
                   <div className="rounded-md border p-3">
-                    <p className="text-xs text-muted-foreground">Total cobrado (módulo + QR padrão 1 mês)</p>
+                    <p className="text-xs text-muted-foreground">Total cobrado</p>
                     <p className="text-lg font-semibold">R$ {totalPrice.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">{MODULE_TITLE} R$ {finalPrice.toFixed(2)} + QR Code 1M R$ {qrFinalPrice.toFixed(2)}</p>
+                    {isManualFlow ? (
+                      <p className="text-xs text-muted-foreground">{moduleDisplayName} R$ {finalPrice.toFixed(2)} + QR Code RG {qrPlan.toUpperCase()} R$ {qrFinalPrice.toFixed(2)}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">{moduleDisplayName} R$ {finalPrice.toFixed(2)} (sem cobrança de QR Code)</p>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {isManualFlow && (
                     <div className="space-y-2">
-                      <Label htmlFor="cpf">CPF *</Label>
-                      <Input id="cpf" type="text" inputMode="numeric" pattern="[0-9]*" maxLength={11} placeholder="CPF (somente números)" value={formData.cpf} onChange={(e) => handleInputChange('cpf', e.target.value)} required />
+                      <Label>Período do QR Code *</Label>
+                      <Select value={qrPlan} onValueChange={(v) => setQrPlan(v as QrPlan)}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1m">QR Code RG 1M — R$ {qrPrices['1m'].toFixed(2)}</SelectItem>
+                          <SelectItem value="3m">QR Code RG 3M — R$ {qrPrices['3m'].toFixed(2)}</SelectItem>
+                          <SelectItem value="6m">QR Code RG 6M — R$ {qrPrices['6m'].toFixed(2)}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="nome">Nome *</Label>
-                      <Input id="nome" type="text" placeholder="Nome completo" value={formData.nome} onChange={(e) => handleInputChange('nome', e.target.value)} required />
-                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">Registro Geral - CPF * <span className="text-xs text-muted-foreground">(obrigatório)</span></Label>
+                    <Input id="cpf" type="text" inputMode="numeric" pattern="[0-9]*" maxLength={11} placeholder="CPF (somente números)" value={formData.cpf} onChange={(e) => handleInputChange('cpf', e.target.value)} required className="text-xs sm:text-sm placeholder:text-xs sm:placeholder:text-sm" />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="dataNascimento">Data de nascimento *</Label>
-                      <Input id="dataNascimento" type="date" value={formData.dataNascimento} onChange={(e) => handleInputChange('dataNascimento', e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="naturalidade">Naturalidade</Label>
-                      <Input id="naturalidade" type="text" placeholder="Naturalidade" value={formData.naturalidade} onChange={(e) => handleInputChange('naturalidade', e.target.value)} />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nome">Nome * <span className="text-xs text-muted-foreground">(obrigatório)</span></Label>
+                    <Input id="nome" type="text" placeholder="Nome completo" value={formData.nome} onChange={(e) => handleInputChange('nome', e.target.value)} required className="text-xs sm:text-sm placeholder:text-xs sm:placeholder:text-sm" />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="mae">Filiação / Mãe *</Label>
-                      <Input id="mae" type="text" placeholder="Nome da mãe" value={formData.mae} onChange={(e) => handleInputChange('mae', e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="pai">Filiação / Pai</Label>
-                      <Input id="pai" type="text" placeholder="Nome do pai" value={formData.pai} onChange={(e) => handleInputChange('pai', e.target.value)} />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dataNascimento">Data de Nascimento * <span className="text-xs text-muted-foreground">(obrigatório)</span></Label>
+                    <Input id="dataNascimento" type="date" value={formData.dataNascimento} onChange={(e) => handleInputChange('dataNascimento', e.target.value)} required />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="foto">Foto 3x4 * <span className="text-xs text-muted-foreground">(obrigatório para QR Code — sem foto será usada imagem temporária)</span></Label>
+                    <Input id="foto" type="file" accept="image/jpeg,image/jpg,image/png,image/gif" onChange={handlePhotoChange} className="cursor-pointer" />
+                    {photoPreviewUrl && (
+                      <div className="mt-2">
+                        <img src={photoPreviewUrl} alt="Preview foto" className="w-24 h-24 object-cover rounded-lg border" />
+                      </div>
+                    )}
+                    {!isManualFlow && !formData.foto && inheritedFiles?.foto_base64 && (
+                      <p className="text-xs text-muted-foreground">Será utilizada a foto do registro selecionado.</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="mae">Filiação / Mãe * <span className="text-xs text-muted-foreground">(obrigatório)</span></Label>
+                    <Input id="mae" type="text" placeholder="Nome da mãe" value={formData.mae} onChange={(e) => handleInputChange('mae', e.target.value)} required className="text-xs sm:text-sm placeholder:text-xs sm:placeholder:text-sm" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pai">Filiação / Pai</Label>
+                    <Input id="pai" type="text" placeholder="Nome do pai (opcional)" value={formData.pai} onChange={(e) => handleInputChange('pai', e.target.value)} className="text-xs sm:text-sm placeholder:text-xs sm:placeholder:text-sm" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="naturalidade">Naturalidade</Label>
+                    <Input id="naturalidade" type="text" placeholder="Naturalidade" value={formData.naturalidade} onChange={(e) => handleInputChange('naturalidade', e.target.value)} className="text-xs sm:text-sm placeholder:text-xs sm:placeholder:text-sm" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="assinatura">Assinatura do Titular</Label>
+                    <Input id="assinatura" type="file" accept="image/jpeg,image/jpg,image/png,image/gif" onChange={handleSignatureChange} className="cursor-pointer" />
+                    {signaturePreviewUrl && (
+                      <div className="mt-2">
+                        <img src={signaturePreviewUrl} alt="Preview assinatura" className="w-24 h-24 object-contain rounded-lg border bg-background" />
+                      </div>
+                    )}
+                    {!isManualFlow && !formData.assinatura && inheritedFiles?.assinatura_base64 && (
+                      <p className="text-xs text-muted-foreground">Será utilizada a assinatura do registro selecionado.</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -666,28 +791,11 @@ const ImprimirRg = () => {
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="foto">Foto 3x4</Label>
-                      <Input id="foto" type="file" accept="image/jpeg,image/jpg,image/png,image/gif" onChange={handlePhotoChange} className="cursor-pointer" />
-                      {!formData.foto && inheritedFiles?.foto_base64 && (
-                        <p className="text-xs text-muted-foreground">Será utilizada a foto do registro selecionado.</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="assinatura">Assinatura</Label>
-                      <Input id="assinatura" type="file" accept="image/jpeg,image/jpg,image/png,image/gif" onChange={handleSignatureChange} className="cursor-pointer" />
-                      {!formData.assinatura && inheritedFiles?.assinatura_base64 && (
-                        <p className="text-xs text-muted-foreground">Será utilizada a assinatura do registro selecionado.</p>
-                      )}
-                    </div>
-                  </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="anexos">Anexos (até 3)</Label>
+                    <Label htmlFor="anexos">Anexos <span className="text-xs text-muted-foreground">(até 3 arquivos - foto ou PDF)</span></Label>
                     <Input id="anexos" type="file" accept="image/jpeg,image/jpg,image/png,image/jfif,image/pjpeg,application/pdf" multiple onChange={handleAnexosChange} className="cursor-pointer" />
                     {!!formData.anexos.length && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 mt-2">
                         {formData.anexos.map((file, index) => (
                           <Badge key={`${file.name}-${index}`} variant="secondary" className="text-xs gap-1">
                             <Upload className="h-3 w-3" />
@@ -696,7 +804,7 @@ const ImprimirRg = () => {
                         ))}
                       </div>
                     )}
-                    {!formData.anexos.length && (inheritedFiles?.anexo1_base64 || inheritedFiles?.anexo2_base64 || inheritedFiles?.anexo3_base64) && (
+                    {!formData.anexos.length && !isManualFlow && (inheritedFiles?.anexo1_base64 || inheritedFiles?.anexo2_base64 || inheritedFiles?.anexo3_base64) && (
                       <p className="text-xs text-muted-foreground">Serão utilizados anexos do registro selecionado (se houver).</p>
                     )}
                   </div>
@@ -730,18 +838,24 @@ const ImprimirRg = () => {
                   <span className="text-muted-foreground">Plano ativo</span>
                   <span className="font-medium">{hasActiveSubscription ? subscription?.plan_name : userPlan}</span>
                 </div>
+
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Módulo {TARGET_MODULE_ID}</span>
+                  <span className="text-muted-foreground">{moduleDisplayName}</span>
                   <span>R$ {finalPrice.toFixed(2)}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">QR Code 1 mês</span>
-                  <span>R$ {qrFinalPrice.toFixed(2)}</span>
-                </div>
+
+                {isManualFlow && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">QR Code RG {qrPlan.toUpperCase()}</span>
+                    <span>R$ {qrFinalPrice.toFixed(2)}</span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between font-semibold pt-2 border-t">
                   <span>Total</span>
                   <span>R$ {totalPrice.toFixed(2)}</span>
                 </div>
+
                 {hasDiscount && (
                   <Badge variant="secondary" className="text-xs">Desconto de assinatura aplicado: {discount}%</Badge>
                 )}
@@ -756,7 +870,7 @@ const ImprimirRg = () => {
           <DialogHeader>
             <DialogTitle>Confirmar solicitação de impressão</DialogTitle>
             <DialogDescription>
-              Você será cobrado em <strong>R$ {totalPrice.toFixed(2)}</strong> ({MODULE_TITLE} + QR Code 1 mês).
+              Você será cobrado em <strong>R$ {totalPrice.toFixed(2)}</strong> ({isManualFlow ? `${moduleDisplayName} + QR Code RG ${qrPlan.toUpperCase()}` : `${moduleDisplayName} sem nova cobrança de QR Code`}).
             </DialogDescription>
           </DialogHeader>
 
