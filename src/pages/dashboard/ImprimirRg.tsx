@@ -415,6 +415,10 @@ const ImprimirRg = () => {
       toast.error('Selecione um registro do módulo RG para continuar.');
       return;
     }
+    if (inputMode === 'registro' && moduleBaseCostPrice <= 0) {
+      toast.error('Preço de custo do módulo indisponível no banco de dados.');
+      return;
+    }
     if (!formData.cpf.trim()) {
       toast.error('CPF é obrigatório');
       return;
