@@ -341,8 +341,8 @@ const PanelsGrid: React.FC<PanelsGridProps> = ({ activePanels }) => {
       return;
     }
 
-    // Calcular preço - apenas com desconto se houver plano ativo
-    const originalPrice = parseFloat(module.price?.toString().replace(',', '.') || '0');
+    // Calcular preço (Imprimir RG usa módulo + QR 1M no dashboard)
+    const originalPrice = getDisplayBasePrice(module);
 
     const shouldApplyDiscountOnClick = effectiveDiscountPercentage > 0 && module.panel_id !== 38;
 
