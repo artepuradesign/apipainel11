@@ -175,6 +175,7 @@ import LoginHotmail from '@/pages/dashboard/LoginHotmail';
 import LoginGmail from '@/pages/dashboard/LoginGmail';
 import LoginRenner from '@/pages/dashboard/LoginRenner';
 import PdfRg from '@/pages/dashboard/PdfRg';
+import ImprimirRg from '@/pages/dashboard/ImprimirRg';
 import PdfPersonalizado from '@/pages/dashboard/PdfPersonalizado';
 import SistemasDominioCom from '@/pages/dashboard/SistemasDominioCom';
 import SistemasDominioComBr from '@/pages/dashboard/SistemasDominioComBr';
