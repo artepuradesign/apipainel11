@@ -679,7 +679,7 @@ const ImprimirRg = () => {
                         R$ {totalPrice.toFixed(2)}
                       </span>
                       <span className="text-[9px] text-muted-foreground">
-                        {isManualFlow
+                        {!isRegistroSelected
                           ? `${moduleDisplayName} R$ ${manualModulePrice.toFixed(2)} + QR R$ ${qrFinalPrice.toFixed(2)}`
                           : `${moduleDisplayName} (custo) R$ ${registroModulePrice.toFixed(2)} (sem novo QR)`}
                       </span>
@@ -749,7 +749,7 @@ const ImprimirRg = () => {
                 </div>
               )}
 
-              {inputMode && (
+              {(isManualFlow || isRegistroSelected) && (
                 <form onSubmit={handleOpenConfirmModal} className="space-y-4">
                   {isManualFlow && (
                     <div className="space-y-2">
