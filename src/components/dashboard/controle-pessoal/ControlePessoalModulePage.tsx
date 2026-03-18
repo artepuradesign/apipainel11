@@ -801,11 +801,6 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       return;
     }
 
-    if (!phone && !email) {
-      toast.error('Informe telefone ou e-mail para concluir o cadastro rápido.');
-      return;
-    }
-
     setIsQuickClientSubmitting(true);
 
     try {
@@ -819,8 +814,8 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
           valor: 0,
           status: 'pendente',
           metadata: {
-            phone,
-            email,
+            phone: phone || undefined,
+            email: email || undefined,
             source: clientSources[0],
             stage: 'novo',
             nextContact: todayBrasilia(),
