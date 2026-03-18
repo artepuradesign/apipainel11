@@ -2178,9 +2178,9 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                                   >
                                     <div>
                                       <span className="text-sm font-medium text-foreground">{clientOption.name}</span>
-                                      {(clientOption.phone || clientOption.email) ? (
+                                      {(clientOption.document || clientOption.phone || clientOption.email) ? (
                                         <span className="block text-xs text-muted-foreground">
-                                          {[clientOption.phone, clientOption.email].filter(Boolean).join(' • ')}
+                                          {[clientOption.document, clientOption.phone, clientOption.email].filter(Boolean).join(' • ')}
                                         </span>
                                       ) : null}
                                     </div>
