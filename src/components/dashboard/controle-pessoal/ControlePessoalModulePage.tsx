@@ -192,6 +192,10 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const [isClientLookupOpen, setIsClientLookupOpen] = useState(false);
   const [isLoadingClientLookup, setIsLoadingClientLookup] = useState(false);
   const [registeredClients, setRegisteredClients] = useState<RegisteredClientOption[]>([]);
+  const [isQuickClientFormOpen, setIsQuickClientFormOpen] = useState(false);
+  const [isQuickClientSubmitting, setIsQuickClientSubmitting] = useState(false);
+  const [quickClientForm, setQuickClientForm] = useState({ name: '', phone: '', email: '' });
+  const clientLookupContainerRef = useRef<HTMLDivElement | null>(null);
   const [form, setForm] = useState({
     title: '',
     date: todayIso,
@@ -340,6 +344,19 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       return Boolean(hasName || hasPhone || hasEmail);
     });
   }, [form.client, registeredClients]);
+
+  useEffect(() => {
+    if (!isClientLookupOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (clientLookupContainerRef.current && !clientLookupContainerRef.current.contains(event.target as Node)) {
+        setIsClientLookupOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isClientLookupOpen]);
 
   const appointmentCountByDate = useMemo(() => {
     return records.reduce<Record<string, number>>((acc, record) => {
@@ -723,34 +740,106 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const handleOpenAgendaModal = useCallback(() => {
     resetForm(selectedDate);
     setIsClientLookupOpen(false);
+    setIsQuickClientFormOpen(false);
+    setQuickClientForm({ name: '', phone: '', email: '' });
     setIsAgendaModalOpen(true);
   }, [resetForm, selectedDate]);
 
   const handleCloseAgendaModal = useCallback(() => {
     setIsAgendaModalOpen(false);
     setIsClientLookupOpen(false);
+    setIsQuickClientFormOpen(false);
+    setQuickClientForm({ name: '', phone: '', email: '' });
     resetForm(selectedDate);
   }, [resetForm, selectedDate]);
 
-  const handleToggleClientLookup = useCallback(async () => {
-    const shouldOpen = !isClientLookupOpen;
-    setIsClientLookupOpen(shouldOpen);
-
-    if (shouldOpen && !registeredClients.length && !isLoadingClientLookup) {
+  const ensureClientLookupOpen = useCallback(async () => {
+    setIsClientLookupOpen(true);
+    if (!registeredClients.length && !isLoadingClientLookup) {
       await loadRegisteredClients();
     }
-  }, [isClientLookupOpen, isLoadingClientLookup, loadRegisteredClients, registeredClients.length]);
+  }, [isLoadingClientLookup, loadRegisteredClients, registeredClients.length]);
+
+  const handleToggleClientLookup = useCallback(async () => {
+    if (isClientLookupOpen) {
+      setIsClientLookupOpen(false);
+      return;
+    }
+
+    await ensureClientLookupOpen();
+  }, [ensureClientLookupOpen, isClientLookupOpen]);
+
+  const handleClientInputChange = useCallback(async (value: string) => {
+    setForm((prev) => ({ ...prev, client: value }));
+    if (!isClientLookupOpen) {
+      await ensureClientLookupOpen();
+    }
+  }, [ensureClientLookupOpen, isClientLookupOpen]);
 
   const handleSelectClient = useCallback((clientName: string) => {
     setForm((prev) => ({ ...prev, client: clientName }));
     setIsClientLookupOpen(false);
   }, []);
 
-  const handleOpenNewClientPage = useCallback(() => {
-    setIsAgendaModalOpen(false);
-    setIsClientLookupOpen(false);
-    navigate('/dashboard/controlepessoal-novocliente');
-  }, [navigate]);
+  const handleToggleQuickClientForm = useCallback(() => {
+    setIsQuickClientFormOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setQuickClientForm((current) => ({ ...current, name: current.name || form.client.trim() }));
+      }
+      return next;
+    });
+  }, [form.client]);
+
+  const handleSaveQuickClient = useCallback(async () => {
+    const clientName = quickClientForm.name.trim();
+    const phone = quickClientForm.phone.trim();
+    const email = quickClientForm.email.trim();
+
+    if (!clientName) {
+      toast.error('Informe o nome do cliente para o cadastro rápido.');
+      return;
+    }
+
+    setIsQuickClientSubmitting(true);
+
+    try {
+      const response = await apiRequest<any>('/controlepessoal-novocliente', {
+        method: 'POST',
+        body: JSON.stringify({
+          titulo: clientName,
+          data_referencia: todayBrasilia(),
+          descricao: null,
+          cliente_nome: clientName,
+          valor: 0,
+          status: 'pendente',
+          metadata: {
+            phone: phone || undefined,
+            email: email || undefined,
+            source: clientSources[0],
+            stage: 'novo',
+            nextContact: todayBrasilia(),
+          },
+        }),
+      });
+
+      if (!response?.success) {
+        throw new Error(response?.error || 'Falha ao cadastrar cliente.');
+      }
+
+      await loadRegisteredClients();
+      setForm((prev) => ({ ...prev, client: clientName }));
+      setIsQuickClientFormOpen(false);
+      setQuickClientForm({ name: '', phone: '', email: '' });
+      setIsClientLookupOpen(false);
+      toast.success('Cliente cadastrado com sucesso.');
+    } catch (error) {
+      console.error('Erro no cadastro rápido de cliente:', error);
+      toast.error(error instanceof Error ? error.message : 'Não foi possível cadastrar o cliente.');
+    } finally {
+      setIsQuickClientSubmitting(false);
+    }
+  }, [loadRegisteredClients, quickClientForm.email, quickClientForm.name, quickClientForm.phone]);
 
   const handleEditAgendaRecord = useCallback((recordId: string) => {
     const target = records.find((item) => item.id === recordId);
@@ -1859,13 +1948,49 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                 <div className="space-y-2">
                   <Label htmlFor="agenda-cliente">Cliente (opcional)</Label>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="agenda-cliente"
-                        placeholder="Nome do cliente"
-                        value={form.client}
-                        onChange={(e) => setForm((prev) => ({ ...prev, client: e.target.value }))}
-                      />
+                    <div className="flex items-start gap-2">
+                      <div ref={clientLookupContainerRef} className="relative flex-1">
+                        <Input
+                          id="agenda-cliente"
+                          placeholder="Digite para buscar cliente"
+                          value={form.client}
+                          autoComplete="off"
+                          onFocus={() => void ensureClientLookupOpen()}
+                          onChange={(e) => void handleClientInputChange(e.target.value)}
+                        />
+
+                        {isClientLookupOpen ? (
+                          <div className="absolute left-0 right-0 top-[calc(100%+0.375rem)] z-50 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-2 shadow-md">
+                            {isLoadingClientLookup ? (
+                              <p className="px-2 py-1 text-sm text-muted-foreground">Carregando clientes...</p>
+                            ) : filteredRegisteredClients.length === 0 ? (
+                              <p className="px-2 py-1 text-sm text-muted-foreground">Nenhum cliente encontrado.</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {filteredRegisteredClients.map((clientOption) => (
+                                  <Button
+                                    key={clientOption.id}
+                                    type="button"
+                                    variant="ghost"
+                                    className="h-auto w-full justify-start px-2 py-2 text-left"
+                                    onClick={() => handleSelectClient(clientOption.name)}
+                                  >
+                                    <div>
+                                      <span className="text-sm font-medium text-foreground">{clientOption.name}</span>
+                                      {(clientOption.phone || clientOption.email) ? (
+                                        <span className="block text-xs text-muted-foreground">
+                                          {[clientOption.phone, clientOption.email].filter(Boolean).join(' • ')}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </Button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+
                       <Button
                         type="button"
                         variant="outline"
@@ -1882,40 +2007,44 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                         variant="outline"
                         size="icon"
                         className="h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-full p-0"
-                        aria-label="Adicionar novo cliente"
-                        title="Adicionar novo cliente"
-                        onClick={handleOpenNewClientPage}
+                        aria-label="Cadastro rápido de cliente"
+                        title="Cadastro rápido de cliente"
+                        onClick={handleToggleQuickClientForm}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
 
-                    {isClientLookupOpen ? (
-                      <div className="max-h-44 overflow-y-auto rounded-md border border-border bg-card p-2">
-                        {isLoadingClientLookup ? (
-                          <p className="px-2 py-1 text-sm text-muted-foreground">Carregando clientes...</p>
-                        ) : filteredRegisteredClients.length === 0 ? (
-                          <p className="px-2 py-1 text-sm text-muted-foreground">Nenhum cliente cadastrado encontrado.</p>
-                        ) : (
-                          <div className="space-y-1">
-                            {filteredRegisteredClients.map((clientOption) => (
-                              <Button
-                                key={clientOption.id}
-                                type="button"
-                                variant="ghost"
-                                className="h-auto w-full justify-start px-2 py-2 text-left"
-                                onClick={() => handleSelectClient(clientOption.name)}
-                              >
-                                <span className="text-sm font-medium text-foreground">{clientOption.name}</span>
-                                {(clientOption.phone || clientOption.email) ? (
-                                  <span className="block text-xs text-muted-foreground">
-                                    {[clientOption.phone, clientOption.email].filter(Boolean).join(' • ')}
-                                  </span>
-                                ) : null}
-                              </Button>
-                            ))}
-                          </div>
-                        )}
+                    {isQuickClientFormOpen ? (
+                      <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cadastro rápido</p>
+                        <Input
+                          placeholder="Nome do cliente"
+                          value={quickClientForm.name}
+                          onChange={(e) => setQuickClientForm((prev) => ({ ...prev, name: e.target.value }))}
+                        />
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Input
+                            placeholder="Telefone"
+                            value={quickClientForm.phone}
+                            onChange={(e) => setQuickClientForm((prev) => ({ ...prev, phone: e.target.value }))}
+                          />
+                          <Input
+                            placeholder="E-mail"
+                            type="email"
+                            value={quickClientForm.email}
+                            onChange={(e) => setQuickClientForm((prev) => ({ ...prev, email: e.target.value }))}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="w-full"
+                          onClick={() => void handleSaveQuickClient()}
+                          disabled={isQuickClientSubmitting}
+                        >
+                          {isQuickClientSubmitting ? 'Salvando cliente...' : 'Salvar cliente rápido'}
+                        </Button>
                       </div>
                     ) : null}
                   </div>
