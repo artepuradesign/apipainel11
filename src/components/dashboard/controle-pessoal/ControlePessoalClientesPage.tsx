@@ -631,25 +631,6 @@ const ControlePessoalClientesPage = () => {
     [consultations]
   );
 
-  const selectedModuleCards = useMemo(
-    () => [
-      {
-        key: 'simples' as const,
-        title: cpfLookupModules.simples?.title || moduleFallbacks.simples.title,
-        description: cpfLookupModules.simples?.description || moduleFallbacks.simples.description,
-        price: Number(cpfLookupModules.simples?.price ?? moduleFallbacks.simples.price),
-        icon: moduleFallbacks.simples.icon,
-      },
-      {
-        key: 'puxa-tudo' as const,
-        title: cpfLookupModules.puxaTudo?.title || moduleFallbacks.puxaTudo.title,
-        description: cpfLookupModules.puxaTudo?.description || moduleFallbacks.puxaTudo.description,
-        price: Number(cpfLookupModules.puxaTudo?.price ?? moduleFallbacks.puxaTudo.price),
-        icon: moduleFallbacks.puxaTudo.icon,
-      },
-    ],
-    [cpfLookupModules]
-  );
 
   const resultHasSections = useMemo(
     () =>
