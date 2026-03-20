@@ -187,6 +187,9 @@ const getDayDiff = (fromDate: string, toDate: string) => {
   return Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
 };
 
+const getStatusMeta = (status?: string) =>
+  recordStatuses.find((item) => item.value === status) || recordStatuses[1];
+
 const isClosedLead = (stage?: LeadStage) => stage === 'fechado-ganho' || stage === 'fechado-perdido';
 
 const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: ControlePessoalModulePageProps) => {
