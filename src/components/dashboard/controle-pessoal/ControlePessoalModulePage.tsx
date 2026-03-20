@@ -436,6 +436,11 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       });
   }, [records, selectedDate]);
 
+  const selectedHistoryRecord = useMemo(
+    () => recordsForSelectedDate.find((record) => record.id === selectedHistoryRecordId) || null,
+    [recordsForSelectedDate, selectedHistoryRecordId],
+  );
+
   const agendaOccupiedRangesForFormDate = useMemo(() => {
     if (!isAgenda || !form.date) return [];
 
