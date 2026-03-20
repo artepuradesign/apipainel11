@@ -2435,6 +2435,13 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                 </div>
 
                 <div className="rounded-md border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Status</p>
+                  <Badge variant={getStatusMeta(selectedHistoryRecord.status).badgeVariant}>
+                    {getStatusMeta(selectedHistoryRecord.status).label}
+                  </Badge>
+                </div>
+
+                <div className="rounded-md border border-border bg-background p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Observações</p>
                   <p className="whitespace-pre-wrap text-sm text-foreground">{selectedHistoryRecord.notes || 'Sem observações'}</p>
                 </div>
@@ -2442,6 +2449,27 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                 <div className="rounded-md border border-border bg-background p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Criado em</p>
                   <p className="text-sm font-medium text-foreground">{formatDateTime(selectedHistoryRecord.createdAt)}</p>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => handleEditAgendaRecord(selectedHistoryRecord.id)}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => void handleDeleteAgendaRecord(selectedHistoryRecord.id)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Excluir
+                  </Button>
                 </div>
               </div>
             ) : null}
