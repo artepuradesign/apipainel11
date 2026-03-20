@@ -1176,6 +1176,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     const metadata = {
       time: form.time,
       endTime: form.endTime,
+      status: form.status,
       transactionType: isFinancial ? form.transactionType : undefined,
       category: isFinancial ? form.category : undefined,
       paymentMethod: isFinancial || isSimpleSales ? form.paymentMethod : undefined,
@@ -1201,7 +1202,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       descricao: form.notes.trim() || null,
       cliente_nome: form.client.trim() || null,
       valor: finalAmount,
-      status: 'pendente',
+      status: form.status,
       metadata,
     };
 
