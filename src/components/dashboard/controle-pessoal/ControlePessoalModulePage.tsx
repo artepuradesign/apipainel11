@@ -132,8 +132,8 @@ const saleStatuses: { label: string; value: SaleStatus }[] = [
   { label: 'Pago', value: 'pago' },
   { label: 'Cancelado', value: 'cancelado' },
 ];
-const recordStatuses: { label: string; value: RecordStatus; badgeVariant: 'default' | 'secondary' | 'outline' }[] = [
-  { label: 'Prioridade alta', value: 'prioridade-alta', badgeVariant: 'destructive' as any },
+const recordStatuses: { label: string; value: RecordStatus; badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive' }[] = [
+  { label: 'Prioridade alta', value: 'prioridade-alta', badgeVariant: 'destructive' },
   { label: 'Prioridade média', value: 'prioridade-media', badgeVariant: 'default' },
   { label: 'Prioridade baixa', value: 'prioridade-baixa', badgeVariant: 'secondary' },
   { label: 'Em andamento', value: 'em-andamento', badgeVariant: 'outline' },
