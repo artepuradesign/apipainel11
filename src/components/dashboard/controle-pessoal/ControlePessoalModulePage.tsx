@@ -198,6 +198,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAgendaModalOpen, setIsAgendaModalOpen] = useState(false);
+  const [selectedHistoryRecordId, setSelectedHistoryRecordId] = useState<string | null>(null);
   const [isClientLookupOpen, setIsClientLookupOpen] = useState(false);
   const [isLoadingClientLookup, setIsLoadingClientLookup] = useState(false);
   const [registeredClients, setRegisteredClients] = useState<RegisteredClientOption[]>([]);
@@ -434,6 +435,11 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
         return toIsoDateTime(a.createdAt).localeCompare(toIsoDateTime(b.createdAt));
       });
   }, [records, selectedDate]);
+
+  const selectedHistoryRecord = useMemo(
+    () => recordsForSelectedDate.find((record) => record.id === selectedHistoryRecordId) || null,
+    [recordsForSelectedDate, selectedHistoryRecordId],
+  );
 
   const agendaOccupiedRangesForFormDate = useMemo(() => {
     if (!isAgenda || !form.date) return [];
@@ -1893,13 +1899,18 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                       </p>
                     ) : (
                       recordsForSelectedDate.map((record) => (
-                        <div key={record.id} className="rounded-md border border-border bg-background p-2.5">
+                        <button
+                          key={record.id}
+                          type="button"
+                          className="w-full rounded-md border border-border bg-background p-2.5 text-left transition-colors hover:bg-accent/40"
+                          onClick={() => setSelectedHistoryRecordId(record.id)}
+                        >
                           <p className="truncate text-base font-semibold text-foreground">{record.title}</p>
                           <p className="mt-1 text-sm font-medium text-primary">
                             {record.time || '--:--'}{record.endTime ? ` - ${record.endTime}` : ''}
                           </p>
                           <p className="mt-1 truncate text-sm text-muted-foreground">{record.client || 'Sem cliente'} • {record.amount ? formatCurrency(record.amount) : 'Sem valor'}</p>
-                        </div>
+                        </button>
                       ))
                     )}
                   </div>
@@ -2290,6 +2301,61 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
+
+      {isAgenda ? (
+        <Dialog open={!!selectedHistoryRecord} onOpenChange={(open) => (!open ? setSelectedHistoryRecordId(null) : undefined)}>
+          <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg sm:text-xl">Detalhes do registro</DialogTitle>
+              <DialogDescription className="text-sm sm:text-base">
+                Informações completas do compromisso selecionado em {formatDateBR(selectedDate)}.
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedHistoryRecord ? (
+              <div className="space-y-3 text-sm sm:text-base">
+                <div className="rounded-md border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Título</p>
+                  <p className="text-base font-semibold text-foreground">{selectedHistoryRecord.title}</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-md border border-border bg-background p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Data</p>
+                    <p className="text-sm font-medium text-foreground">{formatDateBR(selectedHistoryRecord.date)}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Horário</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedHistoryRecord.time || '--:--'}{selectedHistoryRecord.endTime ? ` - ${selectedHistoryRecord.endTime}` : ''}
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Cliente</p>
+                    <p className="text-sm font-medium text-foreground">{selectedHistoryRecord.client || 'Sem cliente'}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Valor</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedHistoryRecord.amount ? formatCurrency(selectedHistoryRecord.amount) : 'Sem valor'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Observações</p>
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{selectedHistoryRecord.notes || 'Sem observações'}</p>
+                </div>
+
+                <div className="rounded-md border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Criado em</p>
+                  <p className="text-sm font-medium text-foreground">{formatDateTime(selectedHistoryRecord.createdAt)}</p>
+                </div>
+              </div>
+            ) : null}
           </DialogContent>
         </Dialog>
       ) : null}
