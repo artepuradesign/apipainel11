@@ -2305,6 +2305,61 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
         </Dialog>
       ) : null}
 
+      {isAgenda ? (
+        <Dialog open={!!selectedHistoryRecord} onOpenChange={(open) => (!open ? setSelectedHistoryRecordId(null) : undefined)}>
+          <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg sm:text-xl">Detalhes do registro</DialogTitle>
+              <DialogDescription className="text-sm sm:text-base">
+                Informações completas do compromisso selecionado em {formatDateBR(selectedDate)}.
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedHistoryRecord ? (
+              <div className="space-y-3 text-sm sm:text-base">
+                <div className="rounded-md border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Título</p>
+                  <p className="text-base font-semibold text-foreground">{selectedHistoryRecord.title}</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-md border border-border bg-background p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Data</p>
+                    <p className="text-sm font-medium text-foreground">{formatDateBR(selectedHistoryRecord.date)}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Horário</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedHistoryRecord.time || '--:--'}{selectedHistoryRecord.endTime ? ` - ${selectedHistoryRecord.endTime}` : ''}
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Cliente</p>
+                    <p className="text-sm font-medium text-foreground">{selectedHistoryRecord.client || 'Sem cliente'}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Valor</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedHistoryRecord.amount ? formatCurrency(selectedHistoryRecord.amount) : 'Sem valor'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Observações</p>
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{selectedHistoryRecord.notes || 'Sem observações'}</p>
+                </div>
+
+                <div className="rounded-md border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Criado em</p>
+                  <p className="text-sm font-medium text-foreground">{formatDateTime(selectedHistoryRecord.createdAt)}</p>
+                </div>
+              </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+      ) : null}
+
       {isNewClient ? (
         <Dialog open={isCpfLookupModalOpen} onOpenChange={(open) => (open ? setIsCpfLookupModalOpen(true) : handleCloseNewClientLookupModal())}>
           <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
