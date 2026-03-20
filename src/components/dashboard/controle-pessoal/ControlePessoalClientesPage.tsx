@@ -580,7 +580,7 @@ const ControlePessoalClientesPage = () => {
 
       await loadSavedClients();
       toast.success('Cliente salvo manualmente.');
-      setManualForm({ name: '', document: '', phone: '', email: '', notes: '' });
+      setManualForm({ name: '', document: '', phone: '', email: '', notes: '', status: 'prioridade-media' });
       setShowManualForm(false);
     } catch (error) {
       console.error('Erro ao salvar cadastro manual:', error);
