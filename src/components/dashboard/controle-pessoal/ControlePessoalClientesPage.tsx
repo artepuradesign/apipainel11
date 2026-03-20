@@ -685,20 +685,19 @@ const ControlePessoalClientesPage = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {selectedModuleCards.map((moduleCard) => {
-                  const Icon = moduleCard.icon;
-                  const selected = lookupMode === moduleCard.key;
+                  const selected = selectedLookupModuleId === moduleCard.id;
 
                   return (
                     <button
-                      key={moduleCard.key}
+                      key={moduleCard.id}
                       type="button"
-                      onClick={() => setLookupMode(moduleCard.key)}
+                      onClick={() => setSelectedLookupModuleId(moduleCard.id)}
                       className={`w-full rounded-lg border p-3 text-left transition-colors ${selected ? 'border-primary bg-accent/30' : 'border-border hover:bg-accent/20'}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background">
-                            <Icon className="h-5 w-5" />
+                          <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-border bg-background px-2 text-xs font-semibold text-muted-foreground">
+                            ID {moduleCard.id}
                           </span>
                           <div>
                             <p className="text-sm font-semibold md:text-base">{moduleCard.title}</p>
