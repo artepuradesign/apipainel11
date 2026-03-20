@@ -2646,7 +2646,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                         <TableHead>Tipo</TableHead>
                         <TableHead>Categoria</TableHead>
                         <TableHead>Vencimento</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Pagamento</TableHead>
                       </>
                     ) : isNewClient ? (
                       <>
@@ -2665,11 +2665,12 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                         <TableHead>Qtd.</TableHead>
                         <TableHead>Unitário</TableHead>
                         <TableHead>Pagamento</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Status venda</TableHead>
                       </>
                     ) : (
                       <TableHead>Data referência</TableHead>
                     )}
+                    <TableHead>Status</TableHead>
                     <TableHead>{isNewClient ? 'Potencial' : isReports ? 'Valor indicador' : 'Valor'}</TableHead>
                   </TableRow>
                 </TableHeader>
