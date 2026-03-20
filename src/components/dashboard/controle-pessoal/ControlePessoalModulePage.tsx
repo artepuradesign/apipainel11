@@ -2675,79 +2675,86 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {records.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell>{formatDateTime(record.createdAt)}</TableCell>
-                      <TableCell className="font-medium">{record.title}</TableCell>
-                      <TableCell>{record.client || '-'}</TableCell>
-                      {isFinancial ? (
-                        <>
-                          <TableCell>
-                            <Badge variant={record.transactionType === 'saida' ? 'destructive' : 'default'}>
-                              {record.transactionType === 'saida' ? 'Saída' : 'Entrada'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{record.category || '-'}</TableCell>
-                          <TableCell>{record.dueDate || '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant={record.isPaid ? 'secondary' : 'outline'}>
-                              {record.isPaid ? 'Quitado' : 'Pendente'}
-                            </Badge>
-                          </TableCell>
-                        </>
-                      ) : isNewClient ? (
-                        <>
-                          <TableCell>{record.phone || record.email || '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant={isClosedLead(record.stage) ? 'secondary' : 'default'}>
-                              {leadStages.find((stage) => stage.value === record.stage)?.label || 'Novo lead'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{record.nextContact ? formatDateBR(record.nextContact) : '-'}</TableCell>
-                        </>
-                      ) : isReports ? (
-                        <>
-                          <TableCell>
-                            <Badge variant="secondary">
-                              {reportTypes.find((type) => type.value === record.reportType)?.label || 'Indicador'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{record.reportPeriod || record.date.slice(0, 7)}</TableCell>
+                  {records.map((record) => {
+                    const statusMeta = getStatusMeta(record.status);
+
+                    return (
+                      <TableRow key={record.id}>
+                        <TableCell>{formatDateTime(record.createdAt)}</TableCell>
+                        <TableCell className="font-medium">{record.title}</TableCell>
+                        <TableCell>{record.client || '-'}</TableCell>
+                        {isFinancial ? (
+                          <>
+                            <TableCell>
+                              <Badge variant={record.transactionType === 'saida' ? 'destructive' : 'default'}>
+                                {record.transactionType === 'saida' ? 'Saída' : 'Entrada'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{record.category || '-'}</TableCell>
+                            <TableCell>{record.dueDate || '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant={record.isPaid ? 'secondary' : 'outline'}>
+                                {record.isPaid ? 'Quitado' : 'Pendente'}
+                              </Badge>
+                            </TableCell>
+                          </>
+                        ) : isNewClient ? (
+                          <>
+                            <TableCell>{record.phone || record.email || '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant={isClosedLead(record.stage) ? 'secondary' : 'default'}>
+                                {leadStages.find((stage) => stage.value === record.stage)?.label || 'Novo lead'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{record.nextContact ? formatDateBR(record.nextContact) : '-'}</TableCell>
+                          </>
+                        ) : isReports ? (
+                          <>
+                            <TableCell>
+                              <Badge variant="secondary">
+                                {reportTypes.find((type) => type.value === record.reportType)?.label || 'Indicador'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{record.reportPeriod || record.date.slice(0, 7)}</TableCell>
+                            <TableCell>{record.date}</TableCell>
+                          </>
+                        ) : isSimpleSales ? (
+                          <>
+                            <TableCell>{record.quantity || 1}</TableCell>
+                            <TableCell>{record.unitPrice ? formatCurrency(record.unitPrice) : '-'}</TableCell>
+                            <TableCell>{record.paymentMethod || '-'}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  record.saleStatus === 'pago'
+                                    ? 'secondary'
+                                    : record.saleStatus === 'cancelado'
+                                      ? 'destructive'
+                                      : 'outline'
+                                }
+                              >
+                                {saleStatuses.find((status) => status.value === record.saleStatus)?.label || 'Pendente'}
+                              </Badge>
+                            </TableCell>
+                          </>
+                        ) : (
                           <TableCell>{record.date}</TableCell>
-                        </>
-                      ) : isSimpleSales ? (
-                        <>
-                          <TableCell>{record.quantity || 1}</TableCell>
-                          <TableCell>{record.unitPrice ? formatCurrency(record.unitPrice) : '-'}</TableCell>
-                          <TableCell>{record.paymentMethod || '-'}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                record.saleStatus === 'pago'
-                                  ? 'secondary'
-                                  : record.saleStatus === 'cancelado'
-                                    ? 'destructive'
-                                    : 'outline'
-                              }
-                            >
-                              {saleStatuses.find((status) => status.value === record.saleStatus)?.label || 'Pendente'}
-                            </Badge>
-                          </TableCell>
-                        </>
-                      ) : (
-                        <TableCell>{record.date}</TableCell>
-                      )}
-                      <TableCell>
-                        {isNewClient
-                          ? record.potentialValue
-                            ? formatCurrency(record.potentialValue)
-                            : '-'
-                          : record.amount
-                            ? formatCurrency(record.amount)
-                            : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        )}
+                        <TableCell>
+                          <Badge variant={statusMeta.badgeVariant}>{statusMeta.label}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {isNewClient
+                            ? record.potentialValue
+                              ? formatCurrency(record.potentialValue)
+                              : '-'
+                            : record.amount
+                              ? formatCurrency(record.amount)
+                              : '-'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
