@@ -31,6 +31,7 @@ type TransactionType = 'entrada' | 'saida';
 type LeadStage = 'novo' | 'contato' | 'proposta' | 'negociacao' | 'fechado-ganho' | 'fechado-perdido';
 type ReportType = 'faturamento' | 'despesas' | 'clientes' | 'vendas' | 'operacional';
 type SaleStatus = 'pendente' | 'pago' | 'cancelado';
+type RecordStatus = 'prioridade-alta' | 'prioridade-media' | 'prioridade-baixa' | 'em-andamento' | 'concluido';
 
 interface ControlePessoalRecord {
   id: string;
@@ -42,6 +43,7 @@ interface ControlePessoalRecord {
   client?: string;
   notes?: string;
   createdAt: string;
+  status?: RecordStatus;
   transactionType?: TransactionType;
   category?: string;
   paymentMethod?: string;
