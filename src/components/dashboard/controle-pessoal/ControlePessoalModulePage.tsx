@@ -1086,6 +1086,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       amount: target.amount ? String(target.amount) : '',
       client: target.client || '',
       notes: target.notes || '',
+      status: target.status || 'prioridade-media',
     }));
     setIsAgendaModalOpen(true);
   }, [records]);
