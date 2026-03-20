@@ -257,6 +257,10 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     const metadata = (item.metadata || {}) as Record<string, unknown>;
     const isPaidValue = metadata.isPaid;
 
+    const itemStatus = typeof item.status === 'string' ? item.status : '';
+    const metadataStatus = typeof metadata.status === 'string' ? metadata.status : '';
+    const resolvedStatus = (itemStatus || metadataStatus || 'prioridade-media') as RecordStatus;
+
     return {
       id: String(item.id),
       title: item.titulo,
@@ -267,6 +271,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       client: item.cliente_nome || undefined,
       notes: item.descricao || undefined,
       createdAt: toIsoDateTime(item.created_at),
+      status: resolvedStatus,
       transactionType: typeof metadata.transactionType === 'string' ? (metadata.transactionType as TransactionType) : undefined,
       category: typeof metadata.category === 'string' ? metadata.category : undefined,
       paymentMethod: typeof metadata.paymentMethod === 'string' ? metadata.paymentMethod : undefined,
