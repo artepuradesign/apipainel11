@@ -432,7 +432,69 @@ const ControlePessoalClientesPage = () => {
   }, [loadSavedClients, loadConsultations]);
 
   const handleRunLookup = useCallback(async () => {
-...
+    const documentDigits = lookupDocument.replace(/\D/g, '').slice(0, 11);
+
+    if (documentDigits.length !== 11) {
+      toast.error('Informe um CPF válido com 11 dígitos.');
+      return;
+    }
+
+    setIsLookupSubmitting(true);
+    setLookupError(null);
+    setShowManualForm(false);
+    setLookupResult(null);
+    setSelectedSavedClientId(null);
+
+    try {
+      const lookupResponse = await baseCpfService.getByCpf(documentDigits);
+
+      if (!lookupResponse?.success || !lookupResponse?.data) {
+        throw new Error(lookupResponse?.error || 'Nenhum dado encontrado para este CPF.');
+      }
+
+      setLookupResult(lookupResponse.data as unknown as CpfLookupResult);
+
+      if (user?.id) {
+        try {
+          const consumptionResponse = await consultasCpfService.create({
+            user_id: Number(user.id),
+            module_type: selectedLookupTitle.toUpperCase(),
+            document: documentDigits,
+            cost: selectedLookupPrice,
+            status: 'completed',
+            result_data: lookupResponse.data,
+            metadata: {
+              source: 'controlepessoal-clientes',
+              page_route: '/dashboard/controlepessoal-novocliente',
+              module_title: selectedLookupTitle,
+            },
+          });
+
+          const createdId = Number((consumptionResponse as any)?.data?.id);
+          setLatestConsultationId(Number.isFinite(createdId) ? createdId : null);
+          await loadConsultations();
+        } catch (registerError) {
+          console.error('Erro ao registrar consumo da consulta CPF:', registerError);
+          toast.warning('Consulta realizada, mas não foi possível registrar o consumo automaticamente.');
+        }
+      }
+
+      toast.success('Consulta finalizada com sucesso.');
+    } catch (error) {
+      console.error('Erro ao consultar CPF em Clientes:', error);
+      const message = error instanceof Error ? error.message : 'Não foi possível consultar este CPF.';
+      setLookupError(message);
+      setShowManualForm(true);
+      setManualForm((prev) => ({
+        ...prev,
+        document: formatCpf(documentDigits),
+      }));
+      toast.error(message);
+    } finally {
+      setIsLookupSubmitting(false);
+    }
+  }, [lookupDocument, loadConsultations, selectedLookupPrice, selectedLookupTitle, user?.id]);
+
   const handleSaveLookupClient = useCallback(async () => {
     if (!lookupResult) return;
 
