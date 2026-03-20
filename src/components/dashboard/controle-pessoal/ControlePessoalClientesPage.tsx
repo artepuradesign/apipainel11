@@ -392,6 +392,10 @@ const ControlePessoalClientesPage = () => {
           moduleTitle: typeof metadata.module_title === 'string' ? metadata.module_title : undefined,
           consultationId: typeof metadata.consultation_id === 'number' ? metadata.consultation_id : undefined,
           manual: metadata.manual === true,
+          phone: typeof metadata.phone === 'string' ? metadata.phone : undefined,
+          email: typeof metadata.email === 'string' ? metadata.email : undefined,
+          notes: item.descricao || undefined,
+          status: ((item.status as ClientStatus) || 'prioridade-media'),
         } satisfies SavedClient;
       });
 
@@ -428,69 +432,7 @@ const ControlePessoalClientesPage = () => {
   }, [loadSavedClients, loadConsultations]);
 
   const handleRunLookup = useCallback(async () => {
-    const documentDigits = lookupDocument.replace(/\D/g, '').slice(0, 11);
-
-    if (documentDigits.length !== 11) {
-      toast.error('Informe um CPF válido com 11 dígitos.');
-      return;
-    }
-
-    setIsLookupSubmitting(true);
-    setLookupError(null);
-    setShowManualForm(false);
-    setLookupResult(null);
-    setSelectedSavedClientId(null);
-
-    try {
-      const lookupResponse = await baseCpfService.getByCpf(documentDigits);
-
-      if (!lookupResponse?.success || !lookupResponse?.data) {
-        throw new Error(lookupResponse?.error || 'Nenhum dado encontrado para este CPF.');
-      }
-
-      setLookupResult(lookupResponse.data as unknown as CpfLookupResult);
-
-      if (user?.id) {
-        try {
-          const consumptionResponse = await consultasCpfService.create({
-            user_id: Number(user.id),
-            module_type: selectedLookupTitle.toUpperCase(),
-            document: documentDigits,
-            cost: selectedLookupPrice,
-            status: 'completed',
-            result_data: lookupResponse.data,
-            metadata: {
-              source: 'controlepessoal-clientes',
-              page_route: '/dashboard/controlepessoal-novocliente',
-              module_title: selectedLookupTitle,
-            },
-          });
-
-          const createdId = Number((consumptionResponse as any)?.data?.id);
-          setLatestConsultationId(Number.isFinite(createdId) ? createdId : null);
-          await loadConsultations();
-        } catch (registerError) {
-          console.error('Erro ao registrar consumo da consulta CPF:', registerError);
-          toast.warning('Consulta realizada, mas não foi possível registrar o consumo automaticamente.');
-        }
-      }
-
-      toast.success('Consulta finalizada com sucesso.');
-    } catch (error) {
-      console.error('Erro ao consultar CPF em Clientes:', error);
-      const message = error instanceof Error ? error.message : 'Não foi possível consultar este CPF.';
-      setLookupError(message);
-      setShowManualForm(true);
-      setManualForm((prev) => ({
-        ...prev,
-        document: formatCpf(documentDigits),
-      }));
-      toast.error(message);
-    } finally {
-      setIsLookupSubmitting(false);
-    }
-  }, [lookupDocument, loadConsultations, selectedLookupPrice, selectedLookupTitle, user?.id]);
-
+...
   const handleSaveLookupClient = useCallback(async () => {
     if (!lookupResult) return;
 
@@ -511,7 +453,7 @@ const ControlePessoalClientesPage = () => {
         descricao: `Cliente salvo via ${selectedLookupTitle}`,
         cliente_nome: name,
         valor: selectedLookupPrice,
-        status: 'salvo',
+        status: 'prioridade-media',
         metadata: {
           document: document ? formatCpf(document) : undefined,
           module_title: selectedLookupTitle,
@@ -519,6 +461,7 @@ const ControlePessoalClientesPage = () => {
           manual: false,
           source: 'consulta-cpf',
           saved_at: new Date().toISOString(),
+          status: 'prioridade-media',
         },
       };
 
@@ -553,25 +496,28 @@ const ControlePessoalClientesPage = () => {
     setIsSavingClient(true);
 
     try {
-      const response = await apiRequest<any>('/controlepessoal-novocliente', {
-        method: 'POST',
-        body: JSON.stringify({
-          titulo: name,
-          data_referencia: todayBrasilia(),
-          descricao: manualForm.notes || 'Cadastro manual após consulta sem retorno.',
-          cliente_nome: name,
-          valor: 0,
-          status: 'manual',
-          metadata: {
-            document: documentDigits ? formatCpf(documentDigits) : undefined,
-            phone: manualForm.phone ? formatPhone(manualForm.phone) : undefined,
-            email: manualForm.email || undefined,
-            module_title: 'Cadastro Manual',
-            manual: true,
-            source: 'cadastro-manual',
-            saved_at: new Date().toISOString(),
-          },
-        }),
+      const payload = {
+        titulo: name,
+        data_referencia: todayBrasilia(),
+        descricao: manualForm.notes || 'Cadastro manual após consulta sem retorno.',
+        cliente_nome: name,
+        valor: 0,
+        status: manualForm.status,
+        metadata: {
+          document: documentDigits ? formatCpf(documentDigits) : undefined,
+          phone: manualForm.phone ? formatPhone(manualForm.phone) : undefined,
+          email: manualForm.email || undefined,
+          module_title: 'Cadastro Manual',
+          manual: true,
+          source: 'cadastro-manual',
+          saved_at: new Date().toISOString(),
+          status: manualForm.status,
+        },
+      };
+
+      const response = await apiRequest<any>(editingSavedClientId ? `/controlepessoal-novocliente/${editingSavedClientId}` : '/controlepessoal-novocliente', {
+        method: editingSavedClientId ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
       });
 
       if (!response?.success) {
@@ -579,8 +525,9 @@ const ControlePessoalClientesPage = () => {
       }
 
       await loadSavedClients();
-      toast.success('Cliente salvo manualmente.');
+      toast.success(editingSavedClientId ? 'Cliente atualizado com sucesso.' : 'Cliente salvo manualmente.');
       setManualForm({ name: '', document: '', phone: '', email: '', notes: '', status: 'prioridade-media' });
+      setEditingSavedClientId(null);
       setShowManualForm(false);
     } catch (error) {
       console.error('Erro ao salvar cadastro manual:', error);
@@ -588,7 +535,39 @@ const ControlePessoalClientesPage = () => {
     } finally {
       setIsSavingClient(false);
     }
-  }, [loadSavedClients, manualForm]);
+  }, [editingSavedClientId, loadSavedClients, manualForm]);
+
+  const handleDeleteSavedClient = useCallback(async (client: SavedClient) => {
+    if (!window.confirm(`Excluir o cliente "${client.title}"?`)) return;
+
+    try {
+      const response = await apiRequest<any>(`/controlepessoal-novocliente/${client.id}`, { method: 'DELETE' });
+      if (!response?.success) throw new Error(response?.error || 'Falha ao excluir cliente.');
+      await loadSavedClients();
+      if (selectedSavedClientId === client.id) {
+        setSelectedSavedClientId(null);
+      }
+      toast.success('Cliente excluído com sucesso.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível excluir este cliente.');
+    }
+  }, [loadSavedClients, selectedSavedClientId]);
+
+  const handleEditSavedClient = useCallback((client: SavedClient) => {
+    setEditingSavedClientId(client.id);
+    setSelectedSavedClientId(client.id);
+    setShowManualForm(true);
+    setLookupResult(null);
+    setLookupDocument(client.document || '');
+    setManualForm({
+      name: client.title,
+      document: client.document || '',
+      phone: client.phone || '',
+      email: client.email || '',
+      notes: client.notes || '',
+      status: client.status || 'prioridade-media',
+    });
+  }, []);
 
   const handleOpenSavedClient = useCallback(
     (client: SavedClient) => {
@@ -603,6 +582,10 @@ const ControlePessoalClientesPage = () => {
           ...prev,
           name: client.title,
           document: client.document || '',
+          phone: client.phone || '',
+          email: client.email || '',
+          notes: client.notes || '',
+          status: client.status || 'prioridade-media',
         }));
         return;
       }
