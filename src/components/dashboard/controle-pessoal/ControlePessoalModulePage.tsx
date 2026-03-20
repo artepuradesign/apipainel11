@@ -798,6 +798,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       amount: '',
       client: '',
       notes: '',
+      status: 'prioridade-media',
       transactionType: 'entrada',
       category: financialCategories[0],
       paymentMethod: financialPaymentMethods[0],
