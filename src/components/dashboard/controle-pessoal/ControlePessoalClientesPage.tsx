@@ -37,8 +37,8 @@ import { toast } from 'sonner';
 import FotosSection from '@/components/dashboard/FotosSection';
 import ScoreGaugeCard from '@/components/dashboard/ScoreGaugeCard';
 
-type CpfLookupMode = 'puxa-tudo' | 'simples';
 type CpfLookupResult = Record<string, unknown>;
+type ClientStatus = 'prioridade-alta' | 'prioridade-media' | 'prioridade-baixa' | 'em-andamento' | 'concluido';
 
 interface ControlePessoalApiItem {
   id: number;
@@ -46,6 +46,7 @@ interface ControlePessoalApiItem {
   descricao?: string | null;
   cliente_nome?: string | null;
   valor?: number | string | null;
+  status?: string | null;
   data_referencia: string;
   created_at: string;
   metadata?: Record<string, unknown> | null;
@@ -59,6 +60,10 @@ interface SavedClient {
   moduleTitle?: string;
   consultationId?: number;
   manual?: boolean;
+  phone?: string;
+  email?: string;
+  notes?: string;
+  status?: ClientStatus;
 }
 
 const moduleFallbacks = {
