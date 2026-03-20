@@ -16,6 +16,8 @@ import {
   Smartphone,
   Camera,
   Database,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import SimpleTitleBar from '@/components/dashboard/SimpleTitleBar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
