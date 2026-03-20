@@ -1032,7 +1032,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
           descricao: `Importado via ${selectedLookupTitle}`,
           cliente_nome: resultName,
           valor: 0,
-          status: 'pendente',
+          status: 'prioridade-media',
           metadata: {
             phone: normalizedPhone || undefined,
             email: rawEmail || undefined,
@@ -1040,6 +1040,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
             source: `Consulta ${selectedLookupTitle}`,
             stage: 'novo',
             nextContact: todayBrasilia(),
+            status: 'prioridade-media',
           },
         }),
       });
