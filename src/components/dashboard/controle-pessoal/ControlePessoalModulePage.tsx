@@ -69,6 +69,7 @@ interface ControlePessoalApiItem {
   descricao?: string | null;
   cliente_nome?: string | null;
   valor?: number | string | null;
+  status?: string | null;
   data_referencia: string;
   created_at: string;
   metadata?: Record<string, unknown> | null;
