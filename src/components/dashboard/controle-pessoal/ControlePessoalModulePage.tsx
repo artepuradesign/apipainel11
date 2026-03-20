@@ -198,6 +198,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAgendaModalOpen, setIsAgendaModalOpen] = useState(false);
+  const [selectedHistoryRecordId, setSelectedHistoryRecordId] = useState<string | null>(null);
   const [isClientLookupOpen, setIsClientLookupOpen] = useState(false);
   const [isLoadingClientLookup, setIsLoadingClientLookup] = useState(false);
   const [registeredClients, setRegisteredClients] = useState<RegisteredClientOption[]>([]);
