@@ -248,7 +248,7 @@ const ControlePessoalClientesPage = () => {
 
   const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
   const [consultations, setConsultations] = useState<ConsultaCpf[]>([]);
-  const [lookupMode, setLookupMode] = useState<CpfLookupMode>('puxa-tudo');
+  const [selectedLookupModuleId, setSelectedLookupModuleId] = useState<number>(allowedModuleIds[0]);
   const [lookupDocument, setLookupDocument] = useState('');
   const [lookupResult, setLookupResult] = useState<CpfLookupResult | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -258,43 +258,42 @@ const ControlePessoalClientesPage = () => {
   const [isLoadingSavedClients, setIsLoadingSavedClients] = useState(false);
   const [isLoadingConsultations, setIsLoadingConsultations] = useState(false);
   const [selectedSavedClientId, setSelectedSavedClientId] = useState<string | null>(null);
+  const [editingSavedClientId, setEditingSavedClientId] = useState<string | null>(null);
   const [showManualForm, setShowManualForm] = useState(false);
-  const [manualForm, setManualForm] = useState({ name: '', document: '', phone: '', email: '', notes: '' });
+  const [manualForm, setManualForm] = useState({
+    name: '',
+    document: '',
+    phone: '',
+    email: '',
+    notes: '',
+    status: 'prioridade-media' as ClientStatus,
+  });
 
-  const cpfLookupModules = useMemo(() => {
-    const resolveByRoute = (route: string) => {
-      const normalizedRoute = normalizeModuleRoute(route);
-      return modules.find((module) => {
-        const candidates = [
-          normalizeModuleRoute(module.path || ''),
-          normalizeModuleRoute(module.api_endpoint || ''),
-          normalizeModuleRoute(module.slug || ''),
-        ].filter(Boolean);
+  const selectedModuleCards = useMemo(() => {
+    return allowedModuleIds.map((moduleId) => {
+      const module = modules.find((item) => Number(item.id) === moduleId);
+      const fallback = moduleFallbackById[moduleId];
 
-        return candidates.includes(normalizedRoute);
-      });
-    };
-
-    return {
-      puxaTudo: resolveByRoute('/dashboard/consultar-cpf-puxa-tudo'),
-      simples: resolveByRoute('/dashboard/consultar-cpf-simples'),
-    };
+      return {
+        id: moduleId,
+        title: module?.title || fallback.title,
+        description: module?.description || fallback.description,
+        price: Number(module?.price ?? fallback.price),
+      };
+    });
   }, [modules]);
 
+  const selectedLookupModule = useMemo(
+    () => selectedModuleCards.find((module) => module.id === selectedLookupModuleId) || selectedModuleCards[0],
+    [selectedLookupModuleId, selectedModuleCards]
+  );
+
   const selectedLookupPrice = useMemo(() => {
-    const selectedModule = lookupMode === 'puxa-tudo' ? cpfLookupModules.puxaTudo : cpfLookupModules.simples;
-    const fallback = lookupMode === 'puxa-tudo' ? moduleFallbacks.puxaTudo.price : moduleFallbacks.simples.price;
-    const rawPrice = Number(selectedModule?.price ?? fallback);
-    return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : fallback;
-  }, [lookupMode, cpfLookupModules]);
+    const rawPrice = Number(selectedLookupModule?.price ?? 0);
+    return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
+  }, [selectedLookupModule?.price]);
 
-  const selectedLookupTitle = useMemo(() => {
-    if (lookupMode === 'puxa-tudo') {
-      return cpfLookupModules.puxaTudo?.title || moduleFallbacks.puxaTudo.title;
-    }
-
-    return cpfLookupModules.simples?.title || moduleFallbacks.simples.title;
-  }, [lookupMode, cpfLookupModules]);
+  const selectedLookupTitle = selectedLookupModule?.title || 'Consulta CPF';
 
   const resultDocument = useMemo(() => extractDocument(lookupResult, lookupDocument), [lookupResult, lookupDocument]);
   const resultName = useMemo(() => extractName(lookupResult), [lookupResult]);
