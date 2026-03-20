@@ -66,20 +66,25 @@ interface SavedClient {
   status?: ClientStatus;
 }
 
-const moduleFallbacks = {
-  puxaTudo: {
-    title: 'CPF PUXA TUDO',
-    description: 'CPF completo + foto, score e múltiplas bases',
-    price: 5,
-    icon: Camera,
-  },
-  simples: {
-    title: 'CPF SIMPLES',
-    description: 'Nome, nascimento, mãe e pai com menor custo',
-    price: 2,
-    icon: Search,
-  },
+const allowedModuleIds = [156, 155, 21, 83];
+
+const moduleFallbackById: Record<number, { title: string; description: string; price: number }> = {
+  156: { title: 'Módulo 156', description: 'Consulta CPF', price: 0 },
+  155: { title: 'Módulo 155', description: 'Consulta CPF', price: 0 },
+  21: { title: 'Módulo 21', description: 'Consulta CPF', price: 0 },
+  83: { title: 'Módulo 83', description: 'Consulta CPF', price: 0 },
 };
+
+const clientStatusOptions: { label: string; value: ClientStatus; badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive' }[] = [
+  { label: 'Prioridade alta', value: 'prioridade-alta', badgeVariant: 'destructive' },
+  { label: 'Prioridade média', value: 'prioridade-media', badgeVariant: 'default' },
+  { label: 'Prioridade baixa', value: 'prioridade-baixa', badgeVariant: 'secondary' },
+  { label: 'Em andamento', value: 'em-andamento', badgeVariant: 'outline' },
+  { label: 'Concluído', value: 'concluido', badgeVariant: 'secondary' },
+];
+
+const getClientStatusMeta = (status?: string) =>
+  clientStatusOptions.find((item) => item.value === status) || clientStatusOptions[1];
 
 const resolvePhoto = (result: CpfLookupResult | null) => {
   if (!result) return '';
