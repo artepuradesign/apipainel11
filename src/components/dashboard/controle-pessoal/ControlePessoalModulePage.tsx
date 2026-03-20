@@ -894,13 +894,14 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
           descricao: null,
           cliente_nome: clientName,
           valor: 0,
-          status: 'pendente',
+          status: 'prioridade-media',
           metadata: {
             phone: phone || undefined,
             email: email || undefined,
             source: clientSources[0],
             stage: 'novo',
             nextContact: todayBrasilia(),
+            status: 'prioridade-media',
           },
         }),
       });
