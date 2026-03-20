@@ -132,6 +132,13 @@ const saleStatuses: { label: string; value: SaleStatus }[] = [
   { label: 'Pago', value: 'pago' },
   { label: 'Cancelado', value: 'cancelado' },
 ];
+const recordStatuses: { label: string; value: RecordStatus; badgeVariant: 'default' | 'secondary' | 'outline' }[] = [
+  { label: 'Prioridade alta', value: 'prioridade-alta', badgeVariant: 'destructive' as any },
+  { label: 'Prioridade média', value: 'prioridade-media', badgeVariant: 'default' },
+  { label: 'Prioridade baixa', value: 'prioridade-baixa', badgeVariant: 'secondary' },
+  { label: 'Em andamento', value: 'em-andamento', badgeVariant: 'outline' },
+  { label: 'Concluído', value: 'concluido', badgeVariant: 'secondary' },
+];
 
 const toISODate = (date: Date) => {
   const year = date.getFullYear();
