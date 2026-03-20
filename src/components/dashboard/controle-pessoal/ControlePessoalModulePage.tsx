@@ -1899,13 +1899,18 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                       </p>
                     ) : (
                       recordsForSelectedDate.map((record) => (
-                        <div key={record.id} className="rounded-md border border-border bg-background p-2.5">
+                        <button
+                          key={record.id}
+                          type="button"
+                          className="w-full rounded-md border border-border bg-background p-2.5 text-left transition-colors hover:bg-accent/40"
+                          onClick={() => setSelectedHistoryRecordId(record.id)}
+                        >
                           <p className="truncate text-base font-semibold text-foreground">{record.title}</p>
                           <p className="mt-1 text-sm font-medium text-primary">
                             {record.time || '--:--'}{record.endTime ? ` - ${record.endTime}` : ''}
                           </p>
                           <p className="mt-1 truncate text-sm text-muted-foreground">{record.client || 'Sem cliente'} • {record.amount ? formatCurrency(record.amount) : 'Sem valor'}</p>
-                        </div>
+                        </button>
                       ))
                     )}
                   </div>
