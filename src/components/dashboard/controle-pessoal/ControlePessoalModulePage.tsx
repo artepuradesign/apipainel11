@@ -2313,6 +2313,22 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                 </div>
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="agenda-status">Status</Label>
+                  <select
+                    id="agenda-status"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    value={form.status}
+                    onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value as RecordStatus }))}
+                  >
+                    {recordStatuses.map((statusOption) => (
+                      <option key={statusOption.value} value={statusOption.value}>{statusOption.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="agenda-observacoes">Observações</Label>
                 <Textarea
