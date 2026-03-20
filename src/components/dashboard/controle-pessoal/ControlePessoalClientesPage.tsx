@@ -34,6 +34,8 @@ import { baseCpfService } from '@/services/baseCpfService';
 import { consultasCpfService, ConsultaCpf } from '@/services/consultasCpfService';
 import { apiRequest } from '@/config/api';
 import { toast } from 'sonner';
+import FotosSection from '@/components/dashboard/FotosSection';
+import ScoreGaugeCard from '@/components/dashboard/ScoreGaugeCard';
 
 type CpfLookupMode = 'puxa-tudo' | 'simples';
 type CpfLookupResult = Record<string, unknown>;
