@@ -1936,20 +1936,55 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                         Nenhum registro em {formatDateBR(selectedDate)}.
                       </p>
                     ) : (
-                      recordsForSelectedDate.map((record) => (
-                        <button
-                          key={record.id}
-                          type="button"
-                          className="w-full rounded-md border border-border bg-background p-2.5 text-left transition-colors hover:bg-accent/40"
-                          onClick={() => setSelectedHistoryRecordId(record.id)}
-                        >
-                          <p className="truncate text-base font-semibold text-foreground">{record.title}</p>
-                          <p className="mt-1 text-sm font-medium text-primary">
-                            {record.time || '--:--'}{record.endTime ? ` - ${record.endTime}` : ''}
-                          </p>
-                          <p className="mt-1 truncate text-sm text-muted-foreground">{record.client || 'Sem cliente'} • {record.amount ? formatCurrency(record.amount) : 'Sem valor'}</p>
-                        </button>
-                      ))
+                      recordsForSelectedDate.map((record) => {
+                        const statusMeta = getStatusMeta(record.status);
+
+                        return (
+                          <div
+                            key={record.id}
+                            className="w-full rounded-md border border-border bg-background p-2.5 text-left transition-colors hover:bg-accent/40"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <button
+                                type="button"
+                                className="min-w-0 flex-1 text-left"
+                                onClick={() => setSelectedHistoryRecordId(record.id)}
+                              >
+                                <p className="truncate text-base font-semibold text-foreground">{record.title}</p>
+                                <p className="mt-1 text-sm font-medium text-primary">
+                                  {record.time || '--:--'}{record.endTime ? ` - ${record.endTime}` : ''}
+                                </p>
+                                <p className="mt-1 truncate text-sm text-muted-foreground">{record.client || 'Sem cliente'} • {record.amount ? formatCurrency(record.amount) : 'Sem valor'}</p>
+                              </button>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-full"
+                                  onClick={() => handleEditAgendaRecord(record.id)}
+                                  title="Editar registro"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-full"
+                                  onClick={() => void handleDeleteAgendaRecord(record.id)}
+                                  title="Excluir registro"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="mt-2">
+                              <Badge variant={statusMeta.badgeVariant}>{statusMeta.label}</Badge>
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>
