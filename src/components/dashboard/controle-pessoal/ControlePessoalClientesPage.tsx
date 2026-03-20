@@ -16,6 +16,8 @@ import {
   Smartphone,
   Camera,
   Database,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import SimpleTitleBar from '@/components/dashboard/SimpleTitleBar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,9 +34,11 @@ import { baseCpfService } from '@/services/baseCpfService';
 import { consultasCpfService, ConsultaCpf } from '@/services/consultasCpfService';
 import { apiRequest } from '@/config/api';
 import { toast } from 'sonner';
+import FotosSection from '@/components/dashboard/FotosSection';
+import ScoreGaugeCard from '@/components/dashboard/ScoreGaugeCard';
 
-type CpfLookupMode = 'puxa-tudo' | 'simples';
 type CpfLookupResult = Record<string, unknown>;
+type ClientStatus = 'prioridade-alta' | 'prioridade-media' | 'prioridade-baixa' | 'em-andamento' | 'concluido';
 
 interface ControlePessoalApiItem {
   id: number;
@@ -42,6 +46,7 @@ interface ControlePessoalApiItem {
   descricao?: string | null;
   cliente_nome?: string | null;
   valor?: number | string | null;
+  status?: string | null;
   data_referencia: string;
   created_at: string;
   metadata?: Record<string, unknown> | null;
@@ -55,22 +60,31 @@ interface SavedClient {
   moduleTitle?: string;
   consultationId?: number;
   manual?: boolean;
+  phone?: string;
+  email?: string;
+  notes?: string;
+  status?: ClientStatus;
 }
 
-const moduleFallbacks = {
-  puxaTudo: {
-    title: 'CPF PUXA TUDO',
-    description: 'CPF completo + foto, score e múltiplas bases',
-    price: 5,
-    icon: Camera,
-  },
-  simples: {
-    title: 'CPF SIMPLES',
-    description: 'Nome, nascimento, mãe e pai com menor custo',
-    price: 2,
-    icon: Search,
-  },
+const allowedModuleIds = [156, 155, 21, 83];
+
+const moduleFallbackById: Record<number, { title: string; description: string; price: number }> = {
+  156: { title: 'Módulo 156', description: 'Consulta CPF', price: 0 },
+  155: { title: 'Módulo 155', description: 'Consulta CPF', price: 0 },
+  21: { title: 'Módulo 21', description: 'Consulta CPF', price: 0 },
+  83: { title: 'Módulo 83', description: 'Consulta CPF', price: 0 },
 };
+
+const clientStatusOptions: { label: string; value: ClientStatus; badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive' }[] = [
+  { label: 'Prioridade alta', value: 'prioridade-alta', badgeVariant: 'destructive' },
+  { label: 'Prioridade média', value: 'prioridade-media', badgeVariant: 'default' },
+  { label: 'Prioridade baixa', value: 'prioridade-baixa', badgeVariant: 'secondary' },
+  { label: 'Em andamento', value: 'em-andamento', badgeVariant: 'outline' },
+  { label: 'Concluído', value: 'concluido', badgeVariant: 'secondary' },
+];
+
+const getClientStatusMeta = (status?: string) =>
+  clientStatusOptions.find((item) => item.value === status) || clientStatusOptions[1];
 
 const resolvePhoto = (result: CpfLookupResult | null) => {
   if (!result) return '';
@@ -234,7 +248,7 @@ const ControlePessoalClientesPage = () => {
 
   const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
   const [consultations, setConsultations] = useState<ConsultaCpf[]>([]);
-  const [lookupMode, setLookupMode] = useState<CpfLookupMode>('puxa-tudo');
+  const [selectedLookupModuleId, setSelectedLookupModuleId] = useState<number>(allowedModuleIds[0]);
   const [lookupDocument, setLookupDocument] = useState('');
   const [lookupResult, setLookupResult] = useState<CpfLookupResult | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -244,43 +258,42 @@ const ControlePessoalClientesPage = () => {
   const [isLoadingSavedClients, setIsLoadingSavedClients] = useState(false);
   const [isLoadingConsultations, setIsLoadingConsultations] = useState(false);
   const [selectedSavedClientId, setSelectedSavedClientId] = useState<string | null>(null);
+  const [editingSavedClientId, setEditingSavedClientId] = useState<string | null>(null);
   const [showManualForm, setShowManualForm] = useState(false);
-  const [manualForm, setManualForm] = useState({ name: '', document: '', phone: '', email: '', notes: '' });
+  const [manualForm, setManualForm] = useState({
+    name: '',
+    document: '',
+    phone: '',
+    email: '',
+    notes: '',
+    status: 'prioridade-media' as ClientStatus,
+  });
 
-  const cpfLookupModules = useMemo(() => {
-    const resolveByRoute = (route: string) => {
-      const normalizedRoute = normalizeModuleRoute(route);
-      return modules.find((module) => {
-        const candidates = [
-          normalizeModuleRoute(module.path || ''),
-          normalizeModuleRoute(module.api_endpoint || ''),
-          normalizeModuleRoute(module.slug || ''),
-        ].filter(Boolean);
+  const selectedModuleCards = useMemo(() => {
+    return allowedModuleIds.map((moduleId) => {
+      const module = modules.find((item) => Number(item.id) === moduleId);
+      const fallback = moduleFallbackById[moduleId];
 
-        return candidates.includes(normalizedRoute);
-      });
-    };
-
-    return {
-      puxaTudo: resolveByRoute('/dashboard/consultar-cpf-puxa-tudo'),
-      simples: resolveByRoute('/dashboard/consultar-cpf-simples'),
-    };
+      return {
+        id: moduleId,
+        title: module?.title || fallback.title,
+        description: module?.description || fallback.description,
+        price: Number(module?.price ?? fallback.price),
+      };
+    });
   }, [modules]);
 
+  const selectedLookupModule = useMemo(
+    () => selectedModuleCards.find((module) => module.id === selectedLookupModuleId) || selectedModuleCards[0],
+    [selectedLookupModuleId, selectedModuleCards]
+  );
+
   const selectedLookupPrice = useMemo(() => {
-    const selectedModule = lookupMode === 'puxa-tudo' ? cpfLookupModules.puxaTudo : cpfLookupModules.simples;
-    const fallback = lookupMode === 'puxa-tudo' ? moduleFallbacks.puxaTudo.price : moduleFallbacks.simples.price;
-    const rawPrice = Number(selectedModule?.price ?? fallback);
-    return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : fallback;
-  }, [lookupMode, cpfLookupModules]);
+    const rawPrice = Number(selectedLookupModule?.price ?? 0);
+    return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
+  }, [selectedLookupModule?.price]);
 
-  const selectedLookupTitle = useMemo(() => {
-    if (lookupMode === 'puxa-tudo') {
-      return cpfLookupModules.puxaTudo?.title || moduleFallbacks.puxaTudo.title;
-    }
-
-    return cpfLookupModules.simples?.title || moduleFallbacks.simples.title;
-  }, [lookupMode, cpfLookupModules]);
+  const selectedLookupTitle = selectedLookupModule?.title || 'Consulta CPF';
 
   const resultDocument = useMemo(() => extractDocument(lookupResult, lookupDocument), [lookupResult, lookupDocument]);
   const resultName = useMemo(() => extractName(lookupResult), [lookupResult]);
@@ -379,6 +392,10 @@ const ControlePessoalClientesPage = () => {
           moduleTitle: typeof metadata.module_title === 'string' ? metadata.module_title : undefined,
           consultationId: typeof metadata.consultation_id === 'number' ? metadata.consultation_id : undefined,
           manual: metadata.manual === true,
+          phone: typeof metadata.phone === 'string' ? metadata.phone : undefined,
+          email: typeof metadata.email === 'string' ? metadata.email : undefined,
+          notes: item.descricao || undefined,
+          status: ((item.status as ClientStatus) || 'prioridade-media'),
         } satisfies SavedClient;
       });
 
@@ -498,7 +515,7 @@ const ControlePessoalClientesPage = () => {
         descricao: `Cliente salvo via ${selectedLookupTitle}`,
         cliente_nome: name,
         valor: selectedLookupPrice,
-        status: 'salvo',
+        status: 'prioridade-media',
         metadata: {
           document: document ? formatCpf(document) : undefined,
           module_title: selectedLookupTitle,
@@ -506,6 +523,7 @@ const ControlePessoalClientesPage = () => {
           manual: false,
           source: 'consulta-cpf',
           saved_at: new Date().toISOString(),
+          status: 'prioridade-media',
         },
       };
 
@@ -540,25 +558,28 @@ const ControlePessoalClientesPage = () => {
     setIsSavingClient(true);
 
     try {
-      const response = await apiRequest<any>('/controlepessoal-novocliente', {
-        method: 'POST',
-        body: JSON.stringify({
-          titulo: name,
-          data_referencia: todayBrasilia(),
-          descricao: manualForm.notes || 'Cadastro manual após consulta sem retorno.',
-          cliente_nome: name,
-          valor: 0,
-          status: 'manual',
-          metadata: {
-            document: documentDigits ? formatCpf(documentDigits) : undefined,
-            phone: manualForm.phone ? formatPhone(manualForm.phone) : undefined,
-            email: manualForm.email || undefined,
-            module_title: 'Cadastro Manual',
-            manual: true,
-            source: 'cadastro-manual',
-            saved_at: new Date().toISOString(),
-          },
-        }),
+      const payload = {
+        titulo: name,
+        data_referencia: todayBrasilia(),
+        descricao: manualForm.notes || 'Cadastro manual após consulta sem retorno.',
+        cliente_nome: name,
+        valor: 0,
+        status: manualForm.status,
+        metadata: {
+          document: documentDigits ? formatCpf(documentDigits) : undefined,
+          phone: manualForm.phone ? formatPhone(manualForm.phone) : undefined,
+          email: manualForm.email || undefined,
+          module_title: 'Cadastro Manual',
+          manual: true,
+          source: 'cadastro-manual',
+          saved_at: new Date().toISOString(),
+          status: manualForm.status,
+        },
+      };
+
+      const response = await apiRequest<any>(editingSavedClientId ? `/controlepessoal-novocliente/${editingSavedClientId}` : '/controlepessoal-novocliente', {
+        method: editingSavedClientId ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
       });
 
       if (!response?.success) {
@@ -566,8 +587,9 @@ const ControlePessoalClientesPage = () => {
       }
 
       await loadSavedClients();
-      toast.success('Cliente salvo manualmente.');
-      setManualForm({ name: '', document: '', phone: '', email: '', notes: '' });
+      toast.success(editingSavedClientId ? 'Cliente atualizado com sucesso.' : 'Cliente salvo manualmente.');
+      setManualForm({ name: '', document: '', phone: '', email: '', notes: '', status: 'prioridade-media' });
+      setEditingSavedClientId(null);
       setShowManualForm(false);
     } catch (error) {
       console.error('Erro ao salvar cadastro manual:', error);
@@ -575,7 +597,39 @@ const ControlePessoalClientesPage = () => {
     } finally {
       setIsSavingClient(false);
     }
-  }, [loadSavedClients, manualForm]);
+  }, [editingSavedClientId, loadSavedClients, manualForm]);
+
+  const handleDeleteSavedClient = useCallback(async (client: SavedClient) => {
+    if (!window.confirm(`Excluir o cliente "${client.title}"?`)) return;
+
+    try {
+      const response = await apiRequest<any>(`/controlepessoal-novocliente/${client.id}`, { method: 'DELETE' });
+      if (!response?.success) throw new Error(response?.error || 'Falha ao excluir cliente.');
+      await loadSavedClients();
+      if (selectedSavedClientId === client.id) {
+        setSelectedSavedClientId(null);
+      }
+      toast.success('Cliente excluído com sucesso.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível excluir este cliente.');
+    }
+  }, [loadSavedClients, selectedSavedClientId]);
+
+  const handleEditSavedClient = useCallback((client: SavedClient) => {
+    setEditingSavedClientId(client.id);
+    setSelectedSavedClientId(client.id);
+    setShowManualForm(true);
+    setLookupResult(null);
+    setLookupDocument(client.document || '');
+    setManualForm({
+      name: client.title,
+      document: client.document || '',
+      phone: client.phone || '',
+      email: client.email || '',
+      notes: client.notes || '',
+      status: client.status || 'prioridade-media',
+    });
+  }, []);
 
   const handleOpenSavedClient = useCallback(
     (client: SavedClient) => {
@@ -590,6 +644,10 @@ const ControlePessoalClientesPage = () => {
           ...prev,
           name: client.title,
           document: client.document || '',
+          phone: client.phone || '',
+          email: client.email || '',
+          notes: client.notes || '',
+          status: client.status || 'prioridade-media',
         }));
         return;
       }
@@ -618,25 +676,6 @@ const ControlePessoalClientesPage = () => {
     [consultations]
   );
 
-  const selectedModuleCards = useMemo(
-    () => [
-      {
-        key: 'simples' as const,
-        title: cpfLookupModules.simples?.title || moduleFallbacks.simples.title,
-        description: cpfLookupModules.simples?.description || moduleFallbacks.simples.description,
-        price: Number(cpfLookupModules.simples?.price ?? moduleFallbacks.simples.price),
-        icon: moduleFallbacks.simples.icon,
-      },
-      {
-        key: 'puxa-tudo' as const,
-        title: cpfLookupModules.puxaTudo?.title || moduleFallbacks.puxaTudo.title,
-        description: cpfLookupModules.puxaTudo?.description || moduleFallbacks.puxaTudo.description,
-        price: Number(cpfLookupModules.puxaTudo?.price ?? moduleFallbacks.puxaTudo.price),
-        icon: moduleFallbacks.puxaTudo.icon,
-      },
-    ],
-    [cpfLookupModules]
-  );
 
   const resultHasSections = useMemo(
     () =>
@@ -691,20 +730,19 @@ const ControlePessoalClientesPage = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {selectedModuleCards.map((moduleCard) => {
-                  const Icon = moduleCard.icon;
-                  const selected = lookupMode === moduleCard.key;
+                  const selected = selectedLookupModuleId === moduleCard.id;
 
                   return (
                     <button
-                      key={moduleCard.key}
+                      key={moduleCard.id}
                       type="button"
-                      onClick={() => setLookupMode(moduleCard.key)}
+                      onClick={() => setSelectedLookupModuleId(moduleCard.id)}
                       className={`w-full rounded-lg border p-3 text-left transition-colors ${selected ? 'border-primary bg-accent/30' : 'border-border hover:bg-accent/20'}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background">
-                            <Icon className="h-5 w-5" />
+                          <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-border bg-background px-2 text-xs font-semibold text-muted-foreground">
+                            ID {moduleCard.id}
                           </span>
                           <div>
                             <p className="text-sm font-semibold md:text-base">{moduleCard.title}</p>

@@ -31,6 +31,7 @@ type TransactionType = 'entrada' | 'saida';
 type LeadStage = 'novo' | 'contato' | 'proposta' | 'negociacao' | 'fechado-ganho' | 'fechado-perdido';
 type ReportType = 'faturamento' | 'despesas' | 'clientes' | 'vendas' | 'operacional';
 type SaleStatus = 'pendente' | 'pago' | 'cancelado';
+type RecordStatus = 'prioridade-alta' | 'prioridade-media' | 'prioridade-baixa' | 'em-andamento' | 'concluido';
 
 interface ControlePessoalRecord {
   id: string;
@@ -42,6 +43,7 @@ interface ControlePessoalRecord {
   client?: string;
   notes?: string;
   createdAt: string;
+  status?: RecordStatus;
   transactionType?: TransactionType;
   category?: string;
   paymentMethod?: string;
@@ -67,6 +69,7 @@ interface ControlePessoalApiItem {
   descricao?: string | null;
   cliente_nome?: string | null;
   valor?: number | string | null;
+  status?: string | null;
   data_referencia: string;
   created_at: string;
   metadata?: Record<string, unknown> | null;
@@ -130,6 +133,13 @@ const saleStatuses: { label: string; value: SaleStatus }[] = [
   { label: 'Pago', value: 'pago' },
   { label: 'Cancelado', value: 'cancelado' },
 ];
+const recordStatuses: { label: string; value: RecordStatus; badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive' }[] = [
+  { label: 'Prioridade alta', value: 'prioridade-alta', badgeVariant: 'destructive' },
+  { label: 'Prioridade média', value: 'prioridade-media', badgeVariant: 'default' },
+  { label: 'Prioridade baixa', value: 'prioridade-baixa', badgeVariant: 'secondary' },
+  { label: 'Em andamento', value: 'em-andamento', badgeVariant: 'outline' },
+  { label: 'Concluído', value: 'concluido', badgeVariant: 'secondary' },
+];
 
 const toISODate = (date: Date) => {
   const year = date.getFullYear();
@@ -178,6 +188,9 @@ const getDayDiff = (fromDate: string, toDate: string) => {
   return Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
 };
 
+const getStatusMeta = (status?: string) =>
+  recordStatuses.find((item) => item.value === status) || recordStatuses[1];
+
 const isClosedLead = (stage?: LeadStage) => stage === 'fechado-ganho' || stage === 'fechado-perdido';
 
 const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: ControlePessoalModulePageProps) => {
@@ -220,6 +233,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     amount: '',
     client: '',
     notes: '',
+    status: 'prioridade-media' as RecordStatus,
     transactionType: 'entrada' as TransactionType,
     category: financialCategories[0],
     paymentMethod: financialPaymentMethods[0],
@@ -243,6 +257,10 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     const metadata = (item.metadata || {}) as Record<string, unknown>;
     const isPaidValue = metadata.isPaid;
 
+    const itemStatus = typeof item.status === 'string' ? item.status : '';
+    const metadataStatus = typeof metadata.status === 'string' ? metadata.status : '';
+    const resolvedStatus = (itemStatus || metadataStatus || 'prioridade-media') as RecordStatus;
+
     return {
       id: String(item.id),
       title: item.titulo,
@@ -253,6 +271,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       client: item.cliente_nome || undefined,
       notes: item.descricao || undefined,
       createdAt: toIsoDateTime(item.created_at),
+      status: resolvedStatus,
       transactionType: typeof metadata.transactionType === 'string' ? (metadata.transactionType as TransactionType) : undefined,
       category: typeof metadata.category === 'string' ? metadata.category : undefined,
       paymentMethod: typeof metadata.paymentMethod === 'string' ? metadata.paymentMethod : undefined,
@@ -779,6 +798,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       amount: '',
       client: '',
       notes: '',
+      status: 'prioridade-media',
       transactionType: 'entrada',
       category: financialCategories[0],
       paymentMethod: financialPaymentMethods[0],
@@ -874,13 +894,14 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
           descricao: null,
           cliente_nome: clientName,
           valor: 0,
-          status: 'pendente',
+          status: 'prioridade-media',
           metadata: {
             phone: phone || undefined,
             email: email || undefined,
             source: clientSources[0],
             stage: 'novo',
             nextContact: todayBrasilia(),
+            status: 'prioridade-media',
           },
         }),
       });
@@ -1011,7 +1032,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
           descricao: `Importado via ${selectedLookupTitle}`,
           cliente_nome: resultName,
           valor: 0,
-          status: 'pendente',
+          status: 'prioridade-media',
           metadata: {
             phone: normalizedPhone || undefined,
             email: rawEmail || undefined,
@@ -1019,6 +1040,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
             source: `Consulta ${selectedLookupTitle}`,
             stage: 'novo',
             nextContact: todayBrasilia(),
+            status: 'prioridade-media',
           },
         }),
       });
@@ -1066,6 +1088,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       amount: target.amount ? String(target.amount) : '',
       client: target.client || '',
       notes: target.notes || '',
+      status: target.status || 'prioridade-media',
     }));
     setIsAgendaModalOpen(true);
   }, [records]);
@@ -1155,6 +1178,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
     const metadata = {
       time: form.time,
       endTime: form.endTime,
+      status: form.status,
       transactionType: isFinancial ? form.transactionType : undefined,
       category: isFinancial ? form.category : undefined,
       paymentMethod: isFinancial || isSimpleSales ? form.paymentMethod : undefined,
@@ -1180,7 +1204,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
       descricao: form.notes.trim() || null,
       cliente_nome: form.client.trim() || null,
       valor: finalAmount,
-      status: 'pendente',
+      status: form.status,
       metadata,
     };
 
@@ -1686,6 +1710,22 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
               </>
             )}
 
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="status-registro">Status</Label>
+                <select
+                  id="status-registro"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  value={form.status}
+                  onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value as RecordStatus }))}
+                >
+                  {recordStatuses.map((statusOption) => (
+                    <option key={statusOption.value} value={statusOption.value}>{statusOption.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="observacoes">Observações</Label>
               <Textarea
@@ -1898,20 +1938,55 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                         Nenhum registro em {formatDateBR(selectedDate)}.
                       </p>
                     ) : (
-                      recordsForSelectedDate.map((record) => (
-                        <button
-                          key={record.id}
-                          type="button"
-                          className="w-full rounded-md border border-border bg-background p-2.5 text-left transition-colors hover:bg-accent/40"
-                          onClick={() => setSelectedHistoryRecordId(record.id)}
-                        >
-                          <p className="truncate text-base font-semibold text-foreground">{record.title}</p>
-                          <p className="mt-1 text-sm font-medium text-primary">
-                            {record.time || '--:--'}{record.endTime ? ` - ${record.endTime}` : ''}
-                          </p>
-                          <p className="mt-1 truncate text-sm text-muted-foreground">{record.client || 'Sem cliente'} • {record.amount ? formatCurrency(record.amount) : 'Sem valor'}</p>
-                        </button>
-                      ))
+                      recordsForSelectedDate.map((record) => {
+                        const statusMeta = getStatusMeta(record.status);
+
+                        return (
+                          <div
+                            key={record.id}
+                            className="w-full rounded-md border border-border bg-background p-2.5 text-left transition-colors hover:bg-accent/40"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <button
+                                type="button"
+                                className="min-w-0 flex-1 text-left"
+                                onClick={() => setSelectedHistoryRecordId(record.id)}
+                              >
+                                <p className="truncate text-base font-semibold text-foreground">{record.title}</p>
+                                <p className="mt-1 text-sm font-medium text-primary">
+                                  {record.time || '--:--'}{record.endTime ? ` - ${record.endTime}` : ''}
+                                </p>
+                                <p className="mt-1 truncate text-sm text-muted-foreground">{record.client || 'Sem cliente'} • {record.amount ? formatCurrency(record.amount) : 'Sem valor'}</p>
+                              </button>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-full"
+                                  onClick={() => handleEditAgendaRecord(record.id)}
+                                  title="Editar registro"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-full"
+                                  onClick={() => void handleDeleteAgendaRecord(record.id)}
+                                  title="Excluir registro"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="mt-2">
+                              <Badge variant={statusMeta.badgeVariant}>{statusMeta.label}</Badge>
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -2275,6 +2350,22 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                 </div>
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="agenda-status">Status</Label>
+                  <select
+                    id="agenda-status"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    value={form.status}
+                    onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value as RecordStatus }))}
+                  >
+                    {recordStatuses.map((statusOption) => (
+                      <option key={statusOption.value} value={statusOption.value}>{statusOption.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="agenda-observacoes">Observações</Label>
                 <Textarea
@@ -2346,6 +2437,13 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                 </div>
 
                 <div className="rounded-md border border-border bg-background p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Status</p>
+                  <Badge variant={getStatusMeta(selectedHistoryRecord.status).badgeVariant}>
+                    {getStatusMeta(selectedHistoryRecord.status).label}
+                  </Badge>
+                </div>
+
+                <div className="rounded-md border border-border bg-background p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Observações</p>
                   <p className="whitespace-pre-wrap text-sm text-foreground">{selectedHistoryRecord.notes || 'Sem observações'}</p>
                 </div>
@@ -2353,6 +2451,27 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                 <div className="rounded-md border border-border bg-background p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Criado em</p>
                   <p className="text-sm font-medium text-foreground">{formatDateTime(selectedHistoryRecord.createdAt)}</p>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => handleEditAgendaRecord(selectedHistoryRecord.id)}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => void handleDeleteAgendaRecord(selectedHistoryRecord.id)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Excluir
+                  </Button>
                 </div>
               </div>
             ) : null}
@@ -2529,7 +2648,7 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                         <TableHead>Tipo</TableHead>
                         <TableHead>Categoria</TableHead>
                         <TableHead>Vencimento</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Pagamento</TableHead>
                       </>
                     ) : isNewClient ? (
                       <>
@@ -2548,88 +2667,96 @@ const ControlePessoalModulePage = ({ moduleType, title, subtitle, formTitle }: C
                         <TableHead>Qtd.</TableHead>
                         <TableHead>Unitário</TableHead>
                         <TableHead>Pagamento</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Status venda</TableHead>
                       </>
                     ) : (
                       <TableHead>Data referência</TableHead>
                     )}
+                    <TableHead>Status</TableHead>
                     <TableHead>{isNewClient ? 'Potencial' : isReports ? 'Valor indicador' : 'Valor'}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {records.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell>{formatDateTime(record.createdAt)}</TableCell>
-                      <TableCell className="font-medium">{record.title}</TableCell>
-                      <TableCell>{record.client || '-'}</TableCell>
-                      {isFinancial ? (
-                        <>
-                          <TableCell>
-                            <Badge variant={record.transactionType === 'saida' ? 'destructive' : 'default'}>
-                              {record.transactionType === 'saida' ? 'Saída' : 'Entrada'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{record.category || '-'}</TableCell>
-                          <TableCell>{record.dueDate || '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant={record.isPaid ? 'secondary' : 'outline'}>
-                              {record.isPaid ? 'Quitado' : 'Pendente'}
-                            </Badge>
-                          </TableCell>
-                        </>
-                      ) : isNewClient ? (
-                        <>
-                          <TableCell>{record.phone || record.email || '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant={isClosedLead(record.stage) ? 'secondary' : 'default'}>
-                              {leadStages.find((stage) => stage.value === record.stage)?.label || 'Novo lead'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{record.nextContact ? formatDateBR(record.nextContact) : '-'}</TableCell>
-                        </>
-                      ) : isReports ? (
-                        <>
-                          <TableCell>
-                            <Badge variant="secondary">
-                              {reportTypes.find((type) => type.value === record.reportType)?.label || 'Indicador'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{record.reportPeriod || record.date.slice(0, 7)}</TableCell>
+                  {records.map((record) => {
+                    const statusMeta = getStatusMeta(record.status);
+
+                    return (
+                      <TableRow key={record.id}>
+                        <TableCell>{formatDateTime(record.createdAt)}</TableCell>
+                        <TableCell className="font-medium">{record.title}</TableCell>
+                        <TableCell>{record.client || '-'}</TableCell>
+                        {isFinancial ? (
+                          <>
+                            <TableCell>
+                              <Badge variant={record.transactionType === 'saida' ? 'destructive' : 'default'}>
+                                {record.transactionType === 'saida' ? 'Saída' : 'Entrada'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{record.category || '-'}</TableCell>
+                            <TableCell>{record.dueDate || '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant={record.isPaid ? 'secondary' : 'outline'}>
+                                {record.isPaid ? 'Quitado' : 'Pendente'}
+                              </Badge>
+                            </TableCell>
+                          </>
+                        ) : isNewClient ? (
+                          <>
+                            <TableCell>{record.phone || record.email || '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant={isClosedLead(record.stage) ? 'secondary' : 'default'}>
+                                {leadStages.find((stage) => stage.value === record.stage)?.label || 'Novo lead'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{record.nextContact ? formatDateBR(record.nextContact) : '-'}</TableCell>
+                          </>
+                        ) : isReports ? (
+                          <>
+                            <TableCell>
+                              <Badge variant="secondary">
+                                {reportTypes.find((type) => type.value === record.reportType)?.label || 'Indicador'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{record.reportPeriod || record.date.slice(0, 7)}</TableCell>
+                            <TableCell>{record.date}</TableCell>
+                          </>
+                        ) : isSimpleSales ? (
+                          <>
+                            <TableCell>{record.quantity || 1}</TableCell>
+                            <TableCell>{record.unitPrice ? formatCurrency(record.unitPrice) : '-'}</TableCell>
+                            <TableCell>{record.paymentMethod || '-'}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  record.saleStatus === 'pago'
+                                    ? 'secondary'
+                                    : record.saleStatus === 'cancelado'
+                                      ? 'destructive'
+                                      : 'outline'
+                                }
+                              >
+                                {saleStatuses.find((status) => status.value === record.saleStatus)?.label || 'Pendente'}
+                              </Badge>
+                            </TableCell>
+                          </>
+                        ) : (
                           <TableCell>{record.date}</TableCell>
-                        </>
-                      ) : isSimpleSales ? (
-                        <>
-                          <TableCell>{record.quantity || 1}</TableCell>
-                          <TableCell>{record.unitPrice ? formatCurrency(record.unitPrice) : '-'}</TableCell>
-                          <TableCell>{record.paymentMethod || '-'}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                record.saleStatus === 'pago'
-                                  ? 'secondary'
-                                  : record.saleStatus === 'cancelado'
-                                    ? 'destructive'
-                                    : 'outline'
-                              }
-                            >
-                              {saleStatuses.find((status) => status.value === record.saleStatus)?.label || 'Pendente'}
-                            </Badge>
-                          </TableCell>
-                        </>
-                      ) : (
-                        <TableCell>{record.date}</TableCell>
-                      )}
-                      <TableCell>
-                        {isNewClient
-                          ? record.potentialValue
-                            ? formatCurrency(record.potentialValue)
-                            : '-'
-                          : record.amount
-                            ? formatCurrency(record.amount)
-                            : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        )}
+                        <TableCell>
+                          <Badge variant={statusMeta.badgeVariant}>{statusMeta.label}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {isNewClient
+                            ? record.potentialValue
+                              ? formatCurrency(record.potentialValue)
+                              : '-'
+                            : record.amount
+                              ? formatCurrency(record.amount)
+                              : '-'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
